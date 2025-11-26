@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
-import type { RoutineInput, RoutineResult } from "@/lib/routine-algorithm"
+import type { RoutineInput, RoutineResult, ProductMap } from "@/lib/routine-algorithm"
 import { buildRoutine } from "@/lib/routine-algorithm"
+import { getSupabaseServerClient } from "@/lib/supabase/server"
 
-// Optional: use Edge runtime (algorithm is pure JS)
-export const runtime = "edge"
+// export const runtime = "edge"
 
 function normalize(input: any): RoutineInput {
   return {
@@ -28,12 +28,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const result: RoutineResult = buildRoutine(input)
+    let productsMap: ProductMap | undefined
+    try {
+      const supabase = await getSupabaseServerClient()
+      const { data: dbProducts } = await supabase.from("products").select("*").eq("in_stock", true)
+
+      if (dbProducts && dbProducts.length > 0) {
+        // Convert array to map with id as key
+        productsMap = dbProducts.reduce((acc, p) => {
+          acc[p.id] = {
+            id: p.id,
+            name: p.name,
+            category: p.category_id,
+            price: p.price,
+            image: p.image,
+            description: p.description,
+            brand: p.brand,
+            size: p.size,
+            rating: p.rating,
+          }
+          return acc
+        }, {} as ProductMap)
+      }
+    } catch (dbError) {
+      console.error("Database error, falling back to hardcoded products:", dbError)
+      // Will use hardcoded products as fallback
+    }
+
+    const result: RoutineResult = buildRoutine(input, productsMap)
     return NextResponse.json(result, { status: 200 })
   } catch (err: any) {
-    return NextResponse.json(
-      { error: "Internal server error", detail: String(err?.message || err) },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Internal server error", detail: String(err?.message || err) }, { status: 500 })
   }
 }

@@ -1,18 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Filter, X } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/product-card"
 import { Footer } from "@/components/footer"
 import { HeaderWithSearch } from "@/components/header-with-search"
-import { allProducts, type Product } from "@/lib/all-products"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useTranslation } from "@/hooks/use-translation"
+import { fetchProducts } from "@/lib/products-service"
+import type { Product } from "@/lib/supabase/types"
+import { allProducts } from "@/lib/all-products"
 
 export default function FaceCarePage() {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
 
   const faceCareCategories = [
     "Serums",
@@ -27,23 +31,67 @@ export default function FaceCarePage() {
     "Exfoliants",
   ]
 
-  const allFaceCareProducts: Product[] = Object.values(allProducts).filter((product) =>
-    faceCareCategories.includes(product.category),
-  )
-
   const categories = [
     { name: t("facecare.cat.all"), filter: "All" },
-    ...faceCareCategories.map((cat) => ({ name: cat, filter: cat })),
+    { name: t("facecare.cat.serums"), filter: "Serums" },
+    { name: t("facecare.cat.essences"), filter: "Essences" },
+    { name: t("facecare.cat.treatments"), filter: "Treatments" },
+    { name: t("facecare.cat.masks"), filter: "Masks" },
+    { name: t("facecare.cat.toners"), filter: "Toners" },
+    { name: t("facecare.cat.sunscreens"), filter: "Sunscreens" },
+    { name: t("facecare.cat.cleansers"), filter: "Cleansers" },
+    { name: t("facecare.cat.moisturizers"), filter: "Moisturizers" },
+    { name: t("facecare.cat.exfoliants"), filter: "Exfoliants" },
   ]
 
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [displayLimit, setDisplayLimit] = useState(9)
 
+  useEffect(() => {
+    async function loadProducts() {
+      setLoading(true)
+      try {
+        const dbProducts = await fetchProducts()
+        console.log("[v0] Fetched products from database:", dbProducts.length)
+
+        if (dbProducts.length > 0) {
+          const faceCareProducts = dbProducts.filter((p) => faceCareCategories.includes(p.category))
+          console.log("[v0] Filtered face care products:", faceCareProducts.length)
+          setProducts(faceCareProducts)
+        } else {
+          // Fallback to hardcoded products
+          console.log("[v0] Using fallback hardcoded products")
+          const fallbackProducts = Object.values(allProducts)
+            .filter((p) => faceCareCategories.includes(p.category))
+            .map((p) => ({
+              ...p,
+              stock: 100,
+              in_stock: p.inStock,
+              low_stock_threshold: 10,
+            }))
+          setProducts(fallbackProducts as unknown as Product[])
+        }
+      } catch (error) {
+        console.error("[v0] Error loading products:", error)
+        // Fallback to hardcoded products
+        const fallbackProducts = Object.values(allProducts)
+          .filter((p) => faceCareCategories.includes(p.category))
+          .map((p) => ({
+            ...p,
+            stock: 100,
+            in_stock: p.inStock,
+            low_stock_threshold: 10,
+          }))
+        setProducts(fallbackProducts as unknown as Product[])
+      }
+      setLoading(false)
+    }
+    loadProducts()
+  }, [])
+
   const filteredProducts =
-    selectedCategory === "All"
-      ? allFaceCareProducts
-      : allFaceCareProducts.filter((product) => product.category === selectedCategory)
+    selectedCategory === "All" ? products : products.filter((product) => product.category === selectedCategory)
 
   const handleCategoryClick = (filter: string) => {
     setSelectedCategory(filter)
@@ -58,6 +106,18 @@ export default function FaceCarePage() {
   const productsToDisplay = filteredProducts.slice(0, displayLimit)
   const hasMoreProducts = filteredProducts.length > displayLimit
 
+  const getProductName = (product: Product) => {
+    if (language === "ru" && product.name_ru) return product.name_ru
+    if (language === "hy" && product.name_hy) return product.name_hy
+    return product.name
+  }
+
+  const getProductDescription = (product: Product) => {
+    if (language === "ru" && product.description_ru) return product.description_ru
+    if (language === "hy" && product.description_hy) return product.description_hy
+    return product.description
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <HeaderWithSearch />
@@ -68,9 +128,8 @@ export default function FaceCarePage() {
             <Image
               src="https://images.unsplash.com/photo-1586220742613-b731f66f7743?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
               alt="Face Care Hero Background"
-              layout="fill"
-              objectFit="cover"
-              className="blur-sm scale-110"
+              fill
+              className="object-cover blur-sm scale-110"
             />
           </div>
           <div className="relative z-10 text-center">
@@ -130,11 +189,32 @@ export default function FaceCarePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {productsToDisplay.map((product) => (
-            <ProductCard key={product.id} {...product} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">Loading products...</p>
+          </div>
+        ) : productsToDisplay.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No products found. Please run the database scripts to add products.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {productsToDisplay.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={getProductName(product)}
+                description={getProductDescription(product)}
+                price={product.price}
+                image={product.image}
+                category={product.category}
+                stock={product.stock}
+                inStock={product.in_stock}
+                lowStockThreshold={product.low_stock_threshold}
+              />
+            ))}
+          </div>
+        )}
 
         {hasMoreProducts && (
           <div className="text-center mt-12">

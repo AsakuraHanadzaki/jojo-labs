@@ -1,5 +1,20 @@
 import { allProducts } from "./all-products"
 
+export type ProductMap = Record<
+  string,
+  {
+    id: string
+    name: string
+    category: string
+    price: number
+    image: string
+    description?: string
+    brand?: string
+    size?: string
+    rating?: number
+  }
+>
+
 export interface RoutineStep {
   step: string
   note?: string
@@ -97,32 +112,16 @@ function roleFromProduct(cat: string, name?: string): Role {
   const c = (cat || "").toLowerCase()
   const n = (name || "").toLowerCase()
 
-  // 1) PRIORITIZE oil cleansers so they are ALWAYS cleanse-1
   if ((/oil/.test(c) && /clean/.test(c)) || (/oil/.test(n) && /clean/.test(n))) return "cleanse-1"
-
-  // 2) Sunscreen
   if (/sun|spf/.test(c) || /spf|sunscreen/.test(n)) return "spf"
-
-  // 3) Water-based cleanser
   if (/cleanser|wash|foam/.test(c) || /cleanser|foam/.test(n)) return "cleanse-2"
-
-  // 4) Hydration layers
   if (/toner|essence|hydrate/.test(c) || /toner|essence/.test(n)) return "hydrate"
-
-  // 5) Masks
   if (/mask/.test(c) || /mask/.test(n)) return "mask"
-
-  // 6) Exfoliants
   if (/exfol|pad/.test(c) || /exfol|pad/.test(n)) return "exfoliate"
-
-  // 7) Moisturizers
   if (/moist|cream|lotion/.test(c) || /cream|lotion|moistur/i.test(n)) return "moisturize"
-
-  // 8) Otherwise: treatment
   return "treat"
 }
 
-// Step templates (always include oil cleanser for PM)
 const TEMPLATES = {
   easy: {
     AM: ["cleanser", "serum", "moisturizer", "spf"],
@@ -155,7 +154,6 @@ const STEP_ROLES: Record<string, Role[]> = {
   buffer: ["hydrate"],
 }
 
-// Skin fit heuristics
 const SKIN_PREF: Record<string, { prefer: RegExp[]; avoid: RegExp[] }> = {
   oily: { prefer: [/gel|light/i, /pore|oil|bha|niacinamide/i], avoid: [/rich|balm|heavy/i] },
   combination: { prefer: [/gel|light/i], avoid: [] },
@@ -169,9 +167,8 @@ function planActives(input: RoutineInput): string[] {
   return uniq(tokens.flatMap((t) => concernBuckets[t] || []))
 }
 
-// Score a product for a slot
-function scoreProduct(id: string, slot: string, user: RoutineInput, actives: string[]): number {
-  const p = allProducts[id as keyof typeof allProducts]
+function scoreProduct(id: string, slot: string, user: RoutineInput, actives: string[], products: ProductMap): number {
+  const p = products[id]
   if (!p) return 0
   const acts = activeFromName(p.name)
   const roles = STEP_ROLES[slot] || []
@@ -185,22 +182,21 @@ function scoreProduct(id: string, slot: string, user: RoutineInput, actives: str
   return 0.5 * concernMatch + 0.3 * roleFit + 0.2 * skinFit
 }
 
-// Pick top product for slot
 function pickFor(
   slot: string,
   user: RoutineInput,
   wanted: string[],
+  products: ProductMap,
   limit = 1,
   opts?: { excludeOil?: boolean },
 ): string[] {
   const roles = STEP_ROLES[slot] || []
 
-  const candidates = Object.keys(allProducts).filter((id) => {
-    const prod = (allProducts as any)[id]
+  const candidates = Object.keys(products).filter((id) => {
+    const prod = products[id]
     const role = roleFromProduct(prod.category, prod.name)
     if (!roles.includes(role)) return false
 
-    // Hard exclusion when requested (AM cleanser)
     if (opts?.excludeOil) {
       const isOil = role === "cleanse-1" || /\boil\b/i.test(prod.name) || /\boil\b/i.test(prod.category)
       if (isOil) return false
@@ -208,23 +204,20 @@ function pickFor(
     return true
   })
 
-  const ranked = candidates.map((id) => ({ id, s: scoreProduct(id, slot, user, wanted) }))
+  const ranked = candidates.map((id) => ({ id, s: scoreProduct(id, slot, user, wanted, products) }))
   ranked.sort((a, b) => b.s - a.s)
   return Array.from(new Set(ranked.slice(0, limit).map((r) => r.id)))
 }
 
-// Weekly plan for intermediate/advanced
 function weeklyPlan(level: string, sensitive: boolean, hasRet: boolean, hasExf: boolean): Record<string, string> {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
   const plan: Record<string, string> = {}
-  // Minimal guidance for easy routines
   if (level === "easy") {
     days.forEach((d) => (plan[d] = "PM: Barrier care (cleanse → moisturize)"))
     if (hasExf) plan["Tue"] = "PM: Gentle exfoliant"
     if (hasRet) plan["Thu"] = "PM: Retinoid"
     return plan
   }
-  // Intermediate/Advanced
   days.forEach((d) => (plan[d] = "PM: Barrier care"))
   if (hasExf) {
     plan["Tue"] = "PM: Exfoliant"
@@ -237,7 +230,6 @@ function weeklyPlan(level: string, sensitive: boolean, hasRet: boolean, hasExf: 
   return plan
 }
 
-// Analysis text for skin types and concerns
 const SKIN_ANALYSIS: Record<string, { desc: string; ingredients: string[] }> = {
   oily: {
     desc: "Oily skin often feels greasy with enlarged pores and is prone to blackheads. Lightweight gel cleansers and oil-control ingredients like niacinamide and BHA help balance sebum production.",
@@ -261,7 +253,6 @@ const SKIN_ANALYSIS: Record<string, { desc: string; ingredients: string[] }> = {
   },
 }
 
-// Analysis for concerns
 const CONCERN_ANALYSIS: Record<string, { desc: string; ingredients: string[] }> = {
   acne: {
     desc: "Acne requires pore‑clearing ingredients like BHA and retinoids alongside soothing agents. Introduce retinoids slowly to prevent irritation.",
@@ -301,19 +292,22 @@ const CONCERN_ANALYSIS: Record<string, { desc: string; ingredients: string[] }> 
   },
 }
 
-export function buildRoutine(input: RoutineInput): RoutineResult {
+export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): RoutineResult {
+  // Use provided products or fall back to hardcoded allProducts
+  const products: ProductMap = productsMap || (allProducts as unknown as ProductMap)
+
   const level = (input.routine || "easy").toLowerCase().replace("basic", "easy")
   const actives = planActives(input)
 
-  // Build AM and PM
   const template = TEMPLATES[level as keyof typeof TEMPLATES]
   const AM: RoutineStep[] = []
   const PM: RoutineStep[] = []
 
-  // --- Build AM routine (never pick oil here) ---
   template.AM.forEach((slot) => {
     const pid =
-      slot === "cleanser" ? pickFor(slot, input, actives, 1, { excludeOil: true })[0] : pickFor(slot, input, actives)[0]
+      slot === "cleanser"
+        ? pickFor(slot, input, actives, products, 1, { excludeOil: true })[0]
+        : pickFor(slot, input, actives, products)[0]
 
     const label =
       slot === "cleanser"
@@ -337,9 +331,8 @@ export function buildRoutine(input: RoutineInput): RoutineResult {
     AM.push({ step: label, productId: pid })
   })
 
-  // --- Build PM routine (always oil → water) ---
   template.PM.forEach((slot) => {
-    const pid = pickFor(slot, input, actives)[0]
+    const pid = pickFor(slot, input, actives, products)[0]
     const label =
       slot === "oil_cleanser"
         ? "Oil Cleanser (PM – removes makeup & sunscreen)"
@@ -362,10 +355,9 @@ export function buildRoutine(input: RoutineInput): RoutineResult {
     PM.push({ step: label, productId: pid })
   })
 
-  // Weekly plan
   const pickedActs = uniq(
     [...AM, ...PM].flatMap((s) => {
-      const product = allProducts[s.productId as keyof typeof allProducts]
+      const product = products[s.productId || ""]
       return activeFromName(product?.name || "")
     }),
   )
@@ -373,7 +365,6 @@ export function buildRoutine(input: RoutineInput): RoutineResult {
   const hasExf = pickedActs.includes("BHA") || pickedActs.includes("aha") || pickedActs.includes("mandelic")
   const weekly = weeklyPlan(level, input.skinType === "sensitive", hasRet, hasExf)
 
-  // Analysis sections
   const analysis: AnalysisSection[] = []
   if (SKIN_ANALYSIS[input.skinType]) {
     const { desc, ingredients } = SKIN_ANALYSIS[input.skinType]
