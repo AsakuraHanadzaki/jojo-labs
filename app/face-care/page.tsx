@@ -58,7 +58,8 @@ export default function FaceCarePage() {
         if (dbProducts.length > 0) {
           const faceCareProducts = dbProducts.filter((p) => faceCareCategories.includes(p.category))
           console.log("[v0] Filtered face care products:", faceCareProducts.length)
-          setProducts(faceCareProducts)
+          const sortedProducts = sortProductsByStock(faceCareProducts)
+          setProducts(sortedProducts)
         } else {
           // Fallback to hardcoded products
           console.log("[v0] Using fallback hardcoded products")
@@ -90,8 +91,29 @@ export default function FaceCarePage() {
     loadProducts()
   }, [])
 
+  const sortProductsByStock = (products: Product[]) => {
+    return [...products].sort((a, b) => {
+      // First priority: in_stock status
+      if (a.in_stock && !b.in_stock) return -1
+      if (!a.in_stock && b.in_stock) return 1
+
+      // Second priority: stock quantity
+      const stockA = a.stock ?? 0
+      const stockB = b.stock ?? 0
+
+      // Both in stock: higher stock quantity first
+      if (a.in_stock && b.in_stock) {
+        return stockB - stockA
+      }
+
+      return 0
+    })
+  }
+
   const filteredProducts =
     selectedCategory === "All" ? products : products.filter((product) => product.category === selectedCategory)
+
+  const sortedFilteredProducts = sortProductsByStock(filteredProducts)
 
   const handleCategoryClick = (filter: string) => {
     setSelectedCategory(filter)
@@ -103,8 +125,8 @@ export default function FaceCarePage() {
     setDisplayLimit((prevLimit) => prevLimit + 9)
   }
 
-  const productsToDisplay = filteredProducts.slice(0, displayLimit)
-  const hasMoreProducts = filteredProducts.length > displayLimit
+  const productsToDisplay = sortedFilteredProducts.slice(0, displayLimit)
+  const hasMoreProducts = sortedFilteredProducts.length > displayLimit
 
   const getProductName = (product: Product) => {
     if (language === "ru" && product.name_ru) return product.name_ru

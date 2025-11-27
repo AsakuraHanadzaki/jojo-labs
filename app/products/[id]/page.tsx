@@ -1,16 +1,14 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import Link from "next/link"
-import { notFound } from "next/navigation"
 import { Star, Heart, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ProductCard } from "@/components/product-card"
-import { Footer } from "@/components/footer"
-import { HeaderWithSearch } from "@/components/header-with-search"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCart } from "@/components/shopping-cart"
-import { allProducts } from "@/lib/all-products" // Import allProducts
+import { allProducts } from "@/lib/all-products"
+import { useTranslation } from "@/hooks/use-translation"
 
 // --- Skin Concern inference helpers -----------------------------------------
 
@@ -260,19 +258,56 @@ function findRelevantProducts(currentProduct: ProductT): ProductT[] {
 
 export default function ProductPage({ params }: { params: { id: string } }) {
   const { dispatch } = useCart()
+  const { t, language } = useTranslation()
+  const [productData, setProductData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Move product lookup to the very beginning
-  const product = allProducts[params.id as keyof typeof allProducts]
+  // Find product from static data as fallback
+  const staticProduct = allProducts.find((p) => p.id === params.id)
 
-  // Early return if product not found
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`/api/products/${params.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setProductData(data)
+        }
+      } catch (error) {
+        console.error("Error fetching product:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProduct()
+  }, [params.id])
+
+  const product = productData || staticProduct
+
   if (!product) {
-    notFound()
+    return <div className="container mx-auto px-4 py-8">Product not found</div>
   }
 
-  // Get relevant products based on the current product
-  const relatedProducts = findRelevantProducts(product)
+  const getStockStatus = () => {
+    const currentStock = product.stock ?? 0
+    const inStock = product.in_stock ?? product.inStock ?? true
+    const lowStockThreshold = 10
+
+    if (!inStock || currentStock === 0) {
+      return { label: t("product.outofstock"), color: "bg-red-100 text-red-800 border-red-200", available: false }
+    }
+    if (currentStock <= lowStockThreshold) {
+      return { label: t("product.lowstock"), color: "bg-amber-100 text-amber-800 border-amber-200", available: true }
+    }
+    return { label: t("product.instock"), color: "bg-green-100 text-green-800 border-green-200", available: true }
+  }
+
+  const stockStatus = getStockStatus()
 
   const addToCart = () => {
+    if (!stockStatus.available) {
+      return // Prevent adding out of stock items
+    }
     dispatch({
       type: "ADD_ITEM",
       payload: {
@@ -284,37 +319,13 @@ export default function ProductPage({ params }: { params: { id: string } }) {
     })
   }
 
+  // Get relevant products based on the current product
+  const relatedProducts = findRelevantProducts(product)
+
   return (
     <div className="min-h-screen bg-white">
-      <HeaderWithSearch />
-
-      {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <nav className="text-sm text-gray-600">
-          <Link href="/" className="hover:text-gray-900">
-            Home
-          </Link>
-          <span className="mx-2">/</span>
-          <Link
-            href={
-              product.category === "Lips" || product.category === "Eyes" || product.category === "Face"
-                ? "/makeup"
-                : "/face-care"
-            }
-            className="hover:text-gray-900"
-          >
-            {product.category === "Lips" || product.category === "Eyes" || product.category === "Face"
-              ? "Make-up"
-              : "Face Care"}
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-gray-900">{product.name}</span>
-        </nav>
-      </div>
-
-      {/* Product Details */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Image */}
           <div className="space-y-6">
             <div className="aspect-[3/4] bg-gradient-to-br from-rose-50 to-pink-100 rounded-3xl p-8 relative">
@@ -350,7 +361,9 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                 <Badge variant="outline" className="text-xs font-medium">
                   {product.category}
                 </Badge>
-                {product.inStock && <Badge className="bg-green-100 text-green-800 hover:bg-green-100">In Stock</Badge>}
+                <Badge className={`${stockStatus.color} hover:${stockStatus.color} text-xs font-medium`}>
+                  {stockStatus.label}
+                </Badge>
                 {product.eco && (
                   <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Eco-Friendly</Badge>
                 )}
@@ -401,15 +414,9 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                         ? "Gentle, low-foam gel"
                         : product.category === "Toners"
                           ? "Refreshing, watery texture"
-                          : product.category === "Treatments"
-                            ? "Targeted treatment formula"
-                            : product.category === "Masks"
-                              ? "Rich, nourishing cream"
-                              : product.category === "Sunscreen"
-                                ? "Lightweight, non-greasy"
-                                : product.category === "Ampoules"
-                                  ? "Concentrated, silky texture"
-                                  : "Smooth, comfortable application"}
+                          : product.category === "Treatments" && product.name.includes("AHA")
+                            ? "3.5-4.0"
+                            : "6.0-7.0"}
                 </p>
               </div>
             </div>
@@ -419,10 +426,11 @@ export default function ProductPage({ params }: { params: { id: string } }) {
               <div className="flex space-x-4">
                 <Button
                   size="lg"
-                  className="flex-1 bg-gray-900 hover:bg-gray-800 h-14 text-base font-medium"
+                  className="flex-1 bg-gray-900 hover:bg-gray-800 h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={addToCart}
+                  disabled={!stockStatus.available}
                 >
-                  Add to Cart
+                  {stockStatus.available ? t("product.addtocart") : t("product.outofstock")}
                 </Button>
                 <Button size="lg" variant="outline" className="p-4 bg-transparent border-2">
                   <Heart className="w-5 h-5" />
@@ -432,58 +440,60 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                 </Button>
               </div>
 
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-sm text-green-800 font-medium">✓ Free shipping on orders over AMD 5,000</p>
-                <p className="text-sm text-green-700 mt-1">✓ Same-day delivery available in Yerevan</p>
-              </div>
-            </div>
-          </div>
-        </div>
+              {stockStatus.available ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm text-green-800 font-medium">
+                    {product.stock && product.stock <= 10
+                      ? `${t("product.onlyleft")}: ${product.stock} ${t("product.items")}`
+                      : t("product.availablenow")}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-800 font-medium">{t("product.outofstockmessage")}</p>
+                </div>
+              )}
 
-        {/* Detailed Product Information Tabs */}
-        <div className="mt-16 border-t border-gray-200 pt-16">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Left Column */}
-              <div className="space-y-10">
-                {/* How to Use */}
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">How to Use</h3>
+              {/* Tabs Section */}
+              <Tabs defaultValue="details" className="space-y-4">
+                <TabsList>
+                  <TabsTrigger value="details">{t("product.details")}</TabsTrigger>
+                  <TabsTrigger value="ingredients">{t("product.ingredients")}</TabsTrigger>
+                  <TabsTrigger value="reviews">{t("product.reviews")}</TabsTrigger>
+                </TabsList>
+                <TabsContent value="details">
                   <div className="space-y-4">
-                    {product.howToUse.map((step, index) => (
-                      <div key={index} className="flex items-start space-x-4">
-                        <div className="flex-shrink-0 w-8 h-8 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-sm font-bold">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-gray-700 leading-relaxed">{step}</p>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="flex justify-between py-3 border-b border-gray-100">
+                      <span className="font-medium text-gray-900">{t("product.size")}</span>
+                      <span className="text-gray-700">{product.size}</span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b border-gray-100">
+                      <span className="font-medium text-gray-900">{t("product.skintype")}</span>
+                      <span className="text-gray-700">{product.skinType}</span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b border-gray-100">
+                      <span className="font-medium text-gray-900">{t("product.category")}</span>
+                      <span className="text-gray-700">{product.category}</span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b border-gray-100">
+                      <span className="font-medium text-gray-900">{t("product.phlevel")}</span>
+                      <span className="text-gray-700">
+                        {product.category === "Cleansers"
+                          ? "5.0-6.0"
+                          : product.category === "Toners"
+                            ? "5.5-6.5"
+                            : product.category === "Treatments" && product.name.includes("AHA")
+                              ? "3.5-4.0"
+                              : "6.0-7.0"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-3">
+                      <span className="font-medium text-gray-900">{t("product.crueltyfree")}</span>
+                      <span className="text-green-600 font-medium">✓ Yes</span>
+                    </div>
                   </div>
-                </div>
-
-                {/* Skin Concerns */}
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">Addresses These Concerns</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {inferConcerns(product).map((concern) => (
-                      <div
-                        key={concern}
-                        className={`${badgeClassForConcern(concern)} px-3 py-2 rounded-lg text-sm font-medium`}
-                      >
-                        {concern}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-10">
-                {/* Key Ingredients */}
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">Key Ingredients</h3>
+                </TabsContent>
+                <TabsContent value="ingredients">
                   <div className="space-y-4">
                     {product.ingredients.slice(0, 6).map((ingredient, index) => (
                       <div key={index} className="border border-gray-200 rounded-3xl p-4">
@@ -616,43 +626,11 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                       </p>
                     )}
                   </div>
-                </div>
-
-                {/* Product Details */}
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">Product Details</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between py-3 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">Size</span>
-                      <span className="text-gray-700">{product.size}</span>
-                    </div>
-                    <div className="flex justify-between py-3 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">Skin Type</span>
-                      <span className="text-gray-700">{product.skinType}</span>
-                    </div>
-                    <div className="flex justify-between py-3 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">Category</span>
-                      <span className="text-gray-700">{product.category}</span>
-                    </div>
-                    <div className="flex justify-between py-3 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">pH Level</span>
-                      <span className="text-gray-700">
-                        {product.category === "Cleansers"
-                          ? "5.0-6.0"
-                          : product.category === "Toners"
-                            ? "5.5-6.5"
-                            : product.category === "Treatments" && product.name.includes("AHA")
-                              ? "3.5-4.0"
-                              : "6.0-7.0"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-3">
-                      <span className="font-medium text-gray-900">Cruelty-Free</span>
-                      <span className="text-green-600 font-medium">✓ Yes</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </TabsContent>
+                <TabsContent value="reviews">
+                  <div className="space-y-4">{/* Review Content Here */}</div>
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>
@@ -660,10 +638,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         {/* Recommended Products */}
         <section className="mt-20 bg-gray-50 rounded-3xl p-8 lg:p-12">
           <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Complete Your Routine</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              These products work beautifully together to enhance your skincare results and address similar concerns
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t("product.completeyourroutine")}</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">{t("product.recommendedproductsmessage")}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {relatedProducts.map((relatedProduct) => (
@@ -671,14 +647,12 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                 key={relatedProduct.id}
                 className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow"
               >
-                <ProductCard {...relatedProduct} />
+                {/* ProductCard Component Here */}
               </div>
             ))}
           </div>
         </section>
-      </main>
-
-      <Footer />
+      </div>
     </div>
   )
 }

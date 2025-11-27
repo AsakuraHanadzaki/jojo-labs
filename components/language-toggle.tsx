@@ -15,9 +15,10 @@ export function LanguageToggle() {
           variant={language === lang.code ? "default" : "ghost"}
           size="sm"
           onClick={() => setLanguage(lang.code)}
-          className="text-xs font-medium"
+          className="text-xs font-medium min-w-[45px]"
+          title={lang.name}
         >
-          {lang.code.toUpperCase()}
+          {lang.code === "hy" ? "ՀՅ" : lang.code.toUpperCase()}
         </Button>
       ))}
     </div>

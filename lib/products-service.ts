@@ -11,7 +11,7 @@ export async function fetchProducts(category?: string): Promise<Product[]> {
     query = query.eq("category", category)
   }
 
-  const { data, error } = await query.order("name")
+  const { data, error } = await query.order("in_stock", { ascending: false }).order("name")
 
   if (error) {
     console.error("Error fetching products:", error)

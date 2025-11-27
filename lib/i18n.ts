@@ -1,3 +1,5 @@
+export type Language = "en" | "ru" | "hy"
+
 export const translations = {
   en: {
     // Navigation
@@ -8,17 +10,13 @@ export const translations = {
 
     // Home Page
     "home.hero.slide1.title": "Clear Skin Starts Here!",
-    "home.hero.slide1.desc":
-      "Discover our premium bakuchiol serum that targets blemishes and improves skin texture for a clearer, more radiant complexion.",
+    "home.hero.slide1.desc": "Discover our premium bakuchiol serum that targets blemishes.",
     "home.hero.slide2.title": "Repair & Hydrate!",
-    "home.hero.slide2.desc":
-      "Experience the power of snail mucin with our bestselling essence that repairs damaged skin and provides deep hydration.",
+    "home.hero.slide2.desc": "Experience the power of snail mucin essence.",
     "home.hero.slide3.title": "Transform Your Skin!",
-    "home.hero.slide3.desc":
-      "Reveal smoother, brighter skin with our professional-strength exfoliating treatment for weekly use.",
+    "home.hero.slide3.desc": "Reveal smoother, brighter skin with our exfoliating treatment.",
     "home.hero.slide4.title": "Perfect Your Pout!",
-    "home.hero.slide4.desc":
-      "Nourish and tint your lips with our peptide-infused lip treatment that adapts to your natural pH.",
+    "home.hero.slide4.desc": "Nourish your lips with our peptide-infused treatment.",
     "home.cta.discover": "Discover Your Routine",
     "home.categories": "Shop by Category",
     "home.facecare": "Face Care",
@@ -37,8 +35,7 @@ export const translations = {
 
     // Face Care Page
     "facecare.title": "Face Care",
-    "facecare.desc":
-      "Discover our collection of face care products, carefully studied and selected for their effectiveness and quality providing you with the best products.",
+    "facecare.desc": "Discover our collection of face care products.",
     "facecare.filter": "Filter",
     "facecare.categories": "Categories:",
     "facecare.products": "products",
@@ -55,6 +52,81 @@ export const translations = {
     "facecare.cat.moisturizers": "Moisturizers",
     "facecare.cat.exfoliants": "Exfoliants",
 
+    // Product
+    "product.instock": "In Stock",
+    "product.lowstock": "Low Stock",
+    "product.outofstock": "Out of Stock",
+    "product.unavailable": "This product is currently out of stock",
+
+    // About Page
+    "about.title": "About JoJo Labs",
+    "about.subtitle": "Born from the passion for beauty and technology.",
+    "about.story": "Our Story",
+    "about.story.p1": "Founded in 2025, our brand combines tech-innovation with skincare science.",
+    "about.story.p2": "Our journey began with making online skincare shopping effective.",
+    "about.story.p3": "JoJo Labs enhances your shopping experience with technology.",
+    "about.delivery": "Home Delivery",
+    "about.delivery.subtitle": "Fast & reliable delivery across Armenia",
+    "about.delivery.p1": "We've partnered with Glovo for delivery.",
+    "about.delivery.p2": "Enjoy same-day delivery in major cities.",
+    "about.delivery.info": "Delivery Information:",
+    "about.delivery.yerevan": "Yerevan: Same-day delivery (1-2 hours)",
+    "about.delivery.cities": "Major cities: Same-day or next-day",
+    "about.delivery.armenia": "All Armenia: 24-48 hours",
+    "about.delivery.free": "Free delivery: On orders over AMD10,000",
+    "about.values": "Our Values",
+    "about.values.transparency": "Transparency",
+    "about.values.transparency.desc": "All products are tested and studied.",
+    "about.values.personalization": "Personalization",
+    "about.values.personalization.desc": "Custom skincare routines for you.",
+    "about.values.efficiency": "Efficiency",
+    "about.values.efficiency.desc": "Latest skincare technology integrated.",
+    "about.contact": "Get in Touch",
+    "about.contact.desc": "Have questions? We'd love to hear from you.",
+    "about.contact.cta": "Contact Us",
+    "about.contact.routine": "Find Your Routine",
+
+    // Contact Page
+    "contact.title": "Contact Us",
+    "contact.subtitle": "We'd love to hear from you.",
+    "contact.form": "Send us a message",
+    "contact.form.desc": "Fill out the form below.",
+    "contact.form.firstname": "First Name",
+    "contact.form.firstname.placeholder": "Your first name",
+    "contact.form.lastname": "Last Name",
+    "contact.form.lastname.placeholder": "Your last name",
+    "contact.form.email": "Email",
+    "contact.form.email.placeholder": "your.email@example.com",
+    "contact.form.phone": "Phone (Optional)",
+    "contact.form.phone.placeholder": "+374 XX XXX XXX",
+    "contact.form.subject": "Subject",
+    "contact.form.subject.placeholder": "How can we help you?",
+    "contact.form.message": "Message",
+    "contact.form.message.placeholder": "Tell us more...",
+    "contact.form.send": "Send Message",
+    "contact.info": "Get in touch",
+    "contact.info.desc": "Visit our store or contact us.",
+    "contact.info.address": "Visit Our Store",
+    "contact.info.address.value": "123 Republic Square\nYerevan 0010, Armenia",
+    "contact.info.phone": "Call Us",
+    "contact.info.phone.value": "+374 10 123 456",
+    "contact.info.email": "Email Us",
+    "contact.info.email.value": "hello@jojolabs.com",
+    "contact.info.hours": "Store Hours",
+    "contact.info.hours.value": "Monday - Friday: 10:00 AM - 8:00 PM",
+    "contact.social": "Follow Us",
+    "contact.social.desc": "Stay updated with our latest products.",
+    "contact.faq": "Frequently Asked Questions",
+    "contact.faq.desc": "Quick answers to common questions",
+    "contact.faq.q1": "Do you offer international shipping?",
+    "contact.faq.a1": "Currently, we ship within Armenia.",
+    "contact.faq.q2": "What is your return policy?",
+    "contact.faq.a2": "We offer a 30-day return policy.",
+    "contact.faq.q3": "Are your products cruelty-free?",
+    "contact.faq.a3": "Yes, all our products are cruelty-free.",
+    "contact.faq.q4": "How can I track my order?",
+    "contact.faq.a4": "You'll receive a tracking number via email.",
+
     // Routine Finder
     "routine.step": "Step",
     "routine.of": "of",
@@ -62,7 +134,7 @@ export const translations = {
     "routine.sensitive": "Do you have sensitive skin?",
     "routine.sensitive.yes": "Yes",
     "routine.sensitive.no": "No",
-    "routine.routinesteps": "How many steps are in your current routine?",
+    "routine.routinesteps": "How many steps in your routine?",
     "routine.routinesteps.short": "1–3 steps",
     "routine.routinesteps.medium": "4–5 steps",
     "routine.routinesteps.long": "6+ steps",
@@ -80,14 +152,10 @@ export const translations = {
     "routine.products": "🛍️ Your Curated Products",
     "routine.ingredients": "✨ Suggested Ingredients:",
     "routine.addtocart": "Add to Cart",
-
-    // Routine Finder - Skin Types
     "routine.skintype.oily": "Oily",
     "routine.skintype.dry": "Dry",
     "routine.skintype.combination": "Combination",
     "routine.skintype.normal": "Normal",
-
-    // Routine Finder - Concerns
     "routine.concern.acne": "Acne",
     "routine.concern.pores": "Pores/Blackheads",
     "routine.concern.pigment": "Dark Spots",
@@ -97,90 +165,6 @@ export const translations = {
     "routine.concern.aging": "Fine Lines & Wrinkles",
     "routine.concern.sensitivity": "Redness & Sensitivity",
     "routine.concern.uneven": "Uneven Tone",
-
-    // About Page
-    "about.title": "About JoJo Labs",
-    "about.subtitle":
-      "Born from the passion for beauty and technology JoJo Labs does not simply sell skin care it provides access to the best available products at the highest level of personalization.",
-    "about.story": "Our Story",
-    "about.story.p1":
-      "Founded in 2025 our brand was born from a passion for combining tech-innovation with skin care science. We believe that true beauty comes from healthy, nourished skin that glows from within.",
-    "about.story.p2":
-      'Our journey began with a simple question "How do we make online skincare shopping effective and easy?"',
-    "about.story.p3":
-      "JoJo Labs has become our answer. Enhancing online skincare shopping experience with latest technology, transparency, and personalization at every step of your shopping experience with JoJo Labs.",
-    "about.delivery": "Home Delivery",
-    "about.delivery.subtitle": "Fast & reliable delivery across Armenia",
-    "about.delivery.p1":
-      "We've partnered with Glovo to bring your favorite beauty products directly to your doorstep. Whether you're in Yerevan, Gyumri, Vanadzor, or anywhere else in Armenia, we ensure fast and reliable delivery of your skincare essentials.",
-    "about.delivery.p2":
-      "Our partnership with Glovo means you can enjoy same-day delivery in major cities, with most orders arriving within 1-2 hours. For other locations across Armenia, we guarantee delivery within 24-48 hours.",
-    "about.delivery.info": "Delivery Information:",
-    "about.delivery.yerevan": "Yerevan: Same-day delivery (1-2 hours)",
-    "about.delivery.cities": "Major cities: Same-day or next-day delivery",
-    "about.delivery.armenia": "All Armenia: 24-48 hours delivery",
-    "about.delivery.free": "Free delivery: On orders over AMD10,000",
-    "about.values": "Our Values",
-    "about.values.transparency": "Transparency",
-    "about.values.transparency.desc":
-      "All products presented on our website are first tested and studied by the managing team. All ingredientes, benefits, and side effects are presented in the product description, to ensure that our clients get the best understanding of the product.",
-    "about.values.personalization": "Personalization",
-    "about.values.personalization.desc":
-      "With focus on personalization we have developed an algorithm that takes into consideration all personal concerns of the client and ensures the highest level of skin routine personalization.",
-    "about.values.efficiency": "Efficiency",
-    "about.values.efficiency.desc":
-      "On top of our inhouse developed algorithm, we have intergrated the best and latest available skincare technology onto our platform making sure that our clients get the best skin care advise and experience with us.",
-    "about.contact": "Get in Touch",
-    "about.contact.desc":
-      "Have questions about our products or want to learn more about our brand? We'd love to hear from you.",
-    "about.contact.cta": "Contact Us",
-    "about.contact.routine": "Find Your Routine",
-
-    // Contact Page
-    "contact.title": "Contact Us",
-    "contact.subtitle":
-      "We'd love to hear from you. Get in touch with our team for any questions about our products or your skincare routine.",
-    "contact.form": "Send us a message",
-    "contact.form.desc": "Fill out the form below and we'll get back to you within 24 hours.",
-    "contact.form.firstname": "First Name",
-    "contact.form.firstname.placeholder": "Your first name",
-    "contact.form.lastname": "Last Name",
-    "contact.form.lastname.placeholder": "Your last name",
-    "contact.form.email": "Email",
-    "contact.form.email.placeholder": "your.email@example.com",
-    "contact.form.phone": "Phone (Optional)",
-    "contact.form.phone.placeholder": "+374 XX XXX XXX",
-    "contact.form.subject": "Subject",
-    "contact.form.subject.placeholder": "How can we help you?",
-    "contact.form.message": "Message",
-    "contact.form.message.placeholder": "Tell us more about your inquiry...",
-    "contact.form.send": "Send Message",
-    "contact.info": "Get in touch",
-    "contact.info.desc": "Visit our store, give us a call, or connect with us on social media.",
-    "contact.info.address": "Visit Our Store",
-    "contact.info.address.value": "123 Republic Square\nYerevan 0010, Armenia",
-    "contact.info.phone": "Call Us",
-    "contact.info.phone.value": "+374 10 123 456\nMonday - Saturday: 10:00 AM - 8:00 PM",
-    "contact.info.email": "Email Us",
-    "contact.info.email.value": "hello@jojolabs.com\nsupport@jojolabs.com",
-    "contact.info.hours": "Store Hours",
-    "contact.info.hours.value":
-      "Monday - Friday: 10:00 AM - 8:00 PM\nSaturday: 10:00 AM - 6:00 PM\nSunday: 12:00 PM - 5:00 PM",
-    "contact.social": "Follow Us",
-    "contact.social.desc": "Stay updated with our latest products, beauty tips, and exclusive offers.",
-    "contact.faq": "Frequently Asked Questions",
-    "contact.faq.desc": "Quick answers to common questions",
-    "contact.faq.q1": "Do you offer international shipping?",
-    "contact.faq.a1":
-      "Currently, we ship within Armenia. We're working on expanding our shipping options to neighboring countries soon.",
-    "contact.faq.q2": "What is your return policy?",
-    "contact.faq.a2":
-      "We offer a 30-day return policy for unopened products. Please contact us for return instructions.",
-    "contact.faq.q3": "Are your products cruelty-free?",
-    "contact.faq.a3": "Yes, all our products are cruelty-free and we work with brands that share our ethical values.",
-    "contact.faq.q4": "How can I track my order?",
-    "contact.faq.a4":
-      "Once your order ships, you'll receive a tracking number via email to monitor your package's progress.",
   },
   ru: {
     // Navigation
@@ -191,26 +175,22 @@ export const translations = {
 
     // Home Page
     "home.hero.slide1.title": "Чистая кожа начинается здесь!",
-    "home.hero.slide1.desc":
-      "Откройте для себя нашу премиальную сыворотку с бакучиолом, которая борется с несовершенствами и улучшает текстуру кожи для более чистого и сияющего лица.",
+    "home.hero.slide1.desc": "Откройте для себя нашу премиальную сыворотку с бакучиолом.",
     "home.hero.slide2.title": "Восстановление и увлажнение!",
-    "home.hero.slide2.desc":
-      "Ощутите силу улиточного муцина с нашей бестселлерной эссенцией, которая восстанавливает поврежденную кожу и обеспечивает глубокое увлажнение.",
+    "home.hero.slide2.desc": "Ощутите силу улиточного муцина.",
     "home.hero.slide3.title": "Преобразуйте свою кожу!",
-    "home.hero.slide3.desc":
-      "Откройте более гладкую и яркую кожу с нашим профессиональным эксфолиантом для еженедельного использования.",
+    "home.hero.slide3.desc": "Откройте более гладкую кожу с нашим эксфолиантом.",
     "home.hero.slide4.title": "Совершенные губы!",
-    "home.hero.slide4.desc":
-      "Питайте и тонируйте свои губы с нашим средством для ухода за губами, обогащенным пептидами, которое адаптируется к вашему естественному pH.",
+    "home.hero.slide4.desc": "Питайте свои губы с нашим средством.",
     "home.cta.discover": "Откройте свою рутину",
     "home.categories": "Покупайте по категориям",
     "home.facecare": "Уход за лицом",
-    "home.facecare.desc": "Очищающие средства, сыворотки и увлажняющие средства",
+    "home.facecare.desc": "Очищающие средства, сыворотки",
     "home.routinefinder": "Подбор рутины",
-    "home.routinefinder.desc": "Персонализированная процедура ухода за кожей",
+    "home.routinefinder.desc": "Персонализированная процедура",
 
     // Footer
-    "footer.tagline": "Премиальный уход за кожей и косметика для вашей естественной красоты от JoJo Labs.",
+    "footer.tagline": "Премиальный уход за кожей от JoJo Labs.",
     "footer.shop": "Магазин",
     "footer.help": "Помощь",
     "footer.connect": "Связь",
@@ -220,8 +200,7 @@ export const translations = {
 
     // Face Care Page
     "facecare.title": "Уход за лицом",
-    "facecare.desc":
-      "Откройте для себя нашу коллекцию средств по уходу за лицом, тщательно изученных и выбранных за их эффективность и качество, предоставляя вам лучшие продукты.",
+    "facecare.desc": "Откройте для себя нашу коллекцию средств.",
     "facecare.filter": "Фильтр",
     "facecare.categories": "Категории:",
     "facecare.products": "товаров",
@@ -238,93 +217,45 @@ export const translations = {
     "facecare.cat.moisturizers": "Увлажняющие средства",
     "facecare.cat.exfoliants": "Эксфолианты",
 
-    // Routine Finder
-    "routine.step": "Этап",
-    "routine.of": "из",
-    "routine.skintype": "Какой у вас тип кожи?",
-    "routine.sensitive": "У вас чувствительная кожа?",
-    "routine.sensitive.yes": "Да",
-    "routine.sensitive.no": "Нет",
-    "routine.routinesteps": "Сколько этапов в вашей текущей рутине?",
-    "routine.routinesteps.short": "1–3 этапа",
-    "routine.routinesteps.medium": "4–5 этапов",
-    "routine.routinesteps.long": "6+ этапов",
-    "routine.concerns": "Выберите ваши основные проблемы (до 5)",
-    "routine.back": "Назад",
-    "routine.next": "Далее",
-    "routine.see": "Увидеть мою рутину",
-    "routine.generating": "Генерирование…",
-    "routine.result": "Ваша персонализированная рутина ✨",
-    "routine.morning": "Утренняя рутина",
-    "routine.morning.emoji": "☀️ Начните день сияя!",
-    "routine.evening": "Вечерняя рутина",
-    "routine.evening.emoji": "🌙 Успокойтесь и восстановитесь",
-    "routine.weekly": "📅 Еженедельный план",
-    "routine.products": "🛍️ Ваши подобранные товары",
-    "routine.ingredients": "✨ Рекомендуемые ингредиенты:",
-    "routine.addtocart": "Добавить в корзину",
-
-    // Routine Finder - Skin Types
-    "routine.skintype.oily": "Жирная",
-    "routine.skintype.dry": "Сухая",
-    "routine.skintype.combination": "Комбинированная",
-    "routine.skintype.normal": "Нормальная",
-
-    // Routine Finder - Concerns
-    "routine.concern.acne": "Акне",
-    "routine.concern.pores": "Поры/Черные точки",
-    "routine.concern.pigment": "Темные пятна",
-    "routine.concern.texture": "Тусклость/Текстура",
-    "routine.concern.dehydration": "Обезвоживание",
-    "routine.concern.dryness": "Сухость",
-    "routine.concern.aging": "Тонкие линии и морщины",
-    "routine.concern.sensitivity": "Краснота и чувствительность",
-    "routine.concern.uneven": "Неровный тон",
+    // Product
+    "product.instock": "В наличии",
+    "product.lowstock": "Мало на складе",
+    "product.outofstock": "Нет в наличии",
+    "product.unavailable": "Этот товар в данный момент недоступен",
 
     // About Page
     "about.title": "О JoJo Labs",
-    "about.subtitle":
-      "Рожденная из страсти к красоте и технологиям, JoJo Labs не просто продает уход за кожей, а предоставляет доступ к лучшим доступным продуктам на максимально персонализированном уровне.",
+    "about.subtitle": "Рожденная из страсти к красоте и технологиям.",
     "about.story": "Наша история",
-    "about.story.p1":
-      "Основанная в 2025 году, наша торговая марка родилась из страсти к объединению инноваций в области технологий с наукой о уходе за кожей. Мы верим, что истинная красота исходит из здоровой, питаемой кожи, которая светится изнутри.",
-    "about.story.p2":
-      'Наше путешествие началось с простого вопроса: "Как сделать онлайн-покупку средств по уходу за кожей эффективной и легкой?"',
-    "about.story.p3":
-      "JoJo Labs стал нашим ответом. Улучшение опыта онлайн-покупок средств по уходу за кожей с использованием новейших технологий, прозрачности и персонализации на каждом этапе вашего опыта покупок с JoJo Labs.",
+    "about.story.p1": "Основанная в 2025 году, наша марка объединяет инновации.",
+    "about.story.p2": "Наше путешествие началось с простого вопроса.",
+    "about.story.p3": "JoJo Labs улучшает ваш опыт покупок.",
     "about.delivery": "Доставка на дом",
-    "about.delivery.subtitle": "Быстрая и надежная доставка по Армении",
-    "about.delivery.p1":
-      "Мы сотрудничаем с Glovo, чтобы доставить ваши любимые косметические продукты прямо к вашей двери. Живете ли вы в Ереване, Гюмри, Ванадзоре или где-либо еще в Армении, мы обеспечиваем быструю и надежную доставку ваших средств по уходу за кожей.",
-    "about.delivery.p2":
-      "Наше партнерство с Glovo означает, что вы можете пользоваться доставкой в тот же день в крупных городах, при этом большинство заказов прибывают в течение 1-2 часов. Для других мест по Армении мы гарантируем доставку в течение 24-48 часов.",
+    "about.delivery.subtitle": "Быстрая доставка по Армении",
+    "about.delivery.p1": "Мы сотрудничаем с Glovo для доставки.",
+    "about.delivery.p2": "Наслаждайтесь доставкой в тот же день.",
     "about.delivery.info": "Информация о доставке:",
     "about.delivery.yerevan": "Ереван: Доставка в тот же день (1-2 часа)",
-    "about.delivery.cities": "Крупные города: Доставка в тот же день или на следующий день",
-    "about.delivery.armenia": "Вся Армения: Доставка в течение 24-48 часов",
-    "about.delivery.free": "Бесплатная доставка: На заказы свыше 10 000 драм",
+    "about.delivery.cities": "Крупные города: В тот же день",
+    "about.delivery.armenia": "Вся Армения: 24-48 часов",
+    "about.delivery.free": "Бесплатная доставка: Свыше 10 000 драм",
     "about.values": "Наши ценности",
     "about.values.transparency": "Прозрачность",
-    "about.values.transparency.desc":
-      "Все продукты, представленные на нашем веб-сайте, сначала тестируются и изучаются командой управления. Все ингредиенты, преимущества и побочные эффекты представлены в описании продукта, чтобы обеспечить лучшее понимание продукта нашими клиентами.",
+    "about.values.transparency.desc": "Все продукты тестируются.",
     "about.values.personalization": "Персонализация",
-    "about.values.personalization.desc":
-      "Сосредоточившись на персонализации, мы разработали алгоритм, который учитывает все личные проблемы клиента и обеспечивает максимальный уровень персонализации процедуры ухода за кожей.",
+    "about.values.personalization.desc": "Индивидуальные рутины для вас.",
     "about.values.efficiency": "Эффективность",
-    "about.values.efficiency.desc":
-      "На основе нашего внутренне разработанного алгоритма мы интегрировали лучшие и новейшие доступные технологии по уходу за кожей на нашей платформе, обеспечивая нашим клиентам лучший совет по уходу за кожей и опыт с нами.",
+    "about.values.efficiency.desc": "Новейшие технологии интегрированы.",
     "about.contact": "Свяжитесь с нами",
-    "about.contact.desc":
-      "Есть вопросы о наших продуктах или хотите узнать больше о нашей марке? Мы будем рады услышать от вас.",
+    "about.contact.desc": "Есть вопросы? Мы будем рады услышать.",
     "about.contact.cta": "Свяжитесь с нами",
     "about.contact.routine": "Найти свою рутину",
 
     // Contact Page
     "contact.title": "Свяжитесь с нами",
-    "contact.subtitle":
-      "Мы будем рады услышать от вас. Свяжитесь с нашей командой по любым вопросам о наших продуктах или ваших процедурах ухода за кожей.",
+    "contact.subtitle": "Мы будем рады услышать от вас.",
     "contact.form": "Отправьте нам сообщение",
-    "contact.form.desc": "Заполните форму ниже, и мы ответим вам в течение 24 часов.",
+    "contact.form.desc": "Заполните форму ниже.",
     "contact.form.firstname": "Имя",
     "contact.form.firstname.placeholder": "Ваше имя",
     "contact.form.lastname": "Фамилия",
@@ -334,51 +265,257 @@ export const translations = {
     "contact.form.phone": "Телефон (опционально)",
     "contact.form.phone.placeholder": "+374 XX XXX XXX",
     "contact.form.subject": "Тема",
-    "contact.form.subject.placeholder": "Чем мы можем вам помочь?",
+    "contact.form.subject.placeholder": "Чем мы можем помочь?",
     "contact.form.message": "Сообщение",
-    "contact.form.message.placeholder": "Расскажите нам больше о вашем вопросе...",
+    "contact.form.message.placeholder": "Расскажите нам больше...",
     "contact.form.send": "Отправить сообщение",
     "contact.info": "Свяжитесь с нами",
-    "contact.info.desc": "Посетите наш магазин, позвоните нам или свяжитесь с нами в социальных сетях.",
+    "contact.info.desc": "Посетите наш магазин.",
     "contact.info.address": "Посетите наш магазин",
     "contact.info.address.value": "123 Площадь Республики\nЕреван 0010, Армения",
     "contact.info.phone": "Позвоните нам",
-    "contact.info.phone.value": "+374 10 123 456\nПонедельник - Суббота: 10:00 - 20:00",
+    "contact.info.phone.value": "+374 10 123 456",
     "contact.info.email": "Напишите нам",
-    "contact.info.email.value": "hello@jojolabs.com\nsupport@jojolabs.com",
-    "contact.info.hours": "Часы работы магазина",
-    "contact.info.hours.value":
-      "Понедельник - Пятница: 10:00 - 20:00\nСуббота: 10:00 - 18:00\nВоскресенье: 12:00 - 17:00",
+    "contact.info.email.value": "hello@jojolabs.com",
+    "contact.info.hours": "Часы работы",
+    "contact.info.hours.value": "Пн-Пт: 10:00 - 20:00",
     "contact.social": "Следите за нами",
-    "contact.social.desc": "Будьте в курсе наших последних продуктов, советов по красоте и эксклюзивных предложений.",
+    "contact.social.desc": "Будьте в курсе наших новинок.",
     "contact.faq": "Часто задаваемые вопросы",
-    "contact.faq.desc": "Быстрые ответы на распространенные вопросы",
+    "contact.faq.desc": "Быстрые ответы",
     "contact.faq.q1": "Вы предлагаете международную доставку?",
-    "contact.faq.a1":
-      "В настоящее время мы доставляем в Армению. Мы работаем над расширением наших возможностей доставки в соседние страны в ближайшее время.",
+    "contact.faq.a1": "В настоящее время мы доставляем в Армению.",
     "contact.faq.q2": "Какова ваша политика возврата?",
-    "contact.faq.a2":
-      "Мы предлагаем политику возврата в течение 30 дней для неоткрытых продуктов. Пожалуйста, свяжитесь с нами для получения инструкций по возврату.",
+    "contact.faq.a2": "Мы предлагаем 30-дневную политику возврата.",
     "contact.faq.q3": "Являются ли ваши продукты гуманными?",
-    "contact.faq.a3":
-      "Да, все наши продукты производятся без жестокости, и мы работаем с брендами, которые разделяют наши этические ценности.",
+    "contact.faq.a3": "Да, все наши продукты гуманны.",
     "contact.faq.q4": "Как отследить мой заказ?",
-    "contact.faq.a4":
-      "После отправки вашего заказа вы получите номер отслеживания по электронной почте для мониторинга прогресса вашего пакета.",
+    "contact.faq.a4": "Вы получите номер отслеживания по email.",
+
+    // Routine Finder
+    "routine.step": "Этап",
+    "routine.of": "из",
+    "routine.skintype": "Какой у вас тип кожи?",
+    "routine.sensitive": "У вас чувствительная кожа?",
+    "routine.sensitive.yes": "Да",
+    "routine.sensitive.no": "Нет",
+    "routine.routinesteps": "Сколько этапов в рутине?",
+    "routine.routinesteps.short": "1–3 этапа",
+    "routine.routinesteps.medium": "4–5 этапов",
+    "routine.routinesteps.long": "6+ этапов",
+    "routine.concerns": "Выберите ваши проблемы (до 5)",
+    "routine.back": "Назад",
+    "routine.next": "Далее",
+    "routine.see": "Увидеть рутину",
+    "routine.generating": "Генерирование…",
+    "routine.result": "Ваша рутина ✨",
+    "routine.morning": "Утренняя рутина",
+    "routine.morning.emoji": "☀️ Начните день!",
+    "routine.evening": "Вечерняя рутина",
+    "routine.evening.emoji": "🌙 Успокойтесь",
+    "routine.weekly": "📅 План",
+    "routine.products": "🛍️ Ваши товары",
+    "routine.ingredients": "✨ Ингредиенты:",
+    "routine.addtocart": "В корзину",
+    "routine.skintype.oily": "Жирная",
+    "routine.skintype.dry": "Сухая",
+    "routine.skintype.combination": "Комбинированная",
+    "routine.skintype.normal": "Нормальная",
+    "routine.concern.acne": "Акне",
+    "routine.concern.pores": "Поры",
+    "routine.concern.pigment": "Пятна",
+    "routine.concern.texture": "Текстура",
+    "routine.concern.dehydration": "Обезвоживание",
+    "routine.concern.dryness": "Сухость",
+    "routine.concern.aging": "Морщины",
+    "routine.concern.sensitivity": "Чувствительность",
+    "routine.concern.uneven": "Неровный тон",
+  },
+  hy: {
+    // Navigation
+    "nav.facecare": "Դեմքի խնամք",
+    "nav.about": "Մեր մասին",
+    "nav.routinefinder": "Ռուտինայի որոնում",
+    "nav.contact": "Կապ",
+
+    // Home Page
+    "home.hero.slide1.title": "Մաքուր մաշկ սկսվում է այստեղ!",
+    "home.hero.slide1.desc": "Բացահայտեք մեր պրեմիում բակուչիոլի սերումը:",
+    "home.hero.slide2.title": "Վերականգնում և խոնավացում!",
+    "home.hero.slide2.desc": "Զգացեք խխունջի մուցինի ուժը:",
+    "home.hero.slide3.title": "Փոխակերպեք ձեր մաշկը!",
+    "home.hero.slide3.desc": "Բացահայտեք ավելի հարթ մաշկ:",
+    "home.hero.slide4.title": "Կատարյալ շրթունքներ!",
+    "home.hero.slide4.desc": "Սնուցեք ձեր շրթունքները:",
+    "home.cta.discover": "Բացահայտեք ձեր ռուտինան",
+    "home.categories": "Գնումներ ըստ կատեգորիայի",
+    "home.facecare": "Դեմքի խնամք",
+    "home.facecare.desc": "Մաքրիչներ, սերումներ",
+    "home.routinefinder": "Ռուտինայի որոնում",
+    "home.routinefinder.desc": "Անհատական խնամք",
+
+    // Footer
+    "footer.tagline": "Պրեմիում մաշկի խնամք JoJo Labs-ից:",
+    "footer.shop": "Խանութ",
+    "footer.help": "Օգնություն",
+    "footer.connect": "Կապ",
+    "footer.instagram": "Instagram",
+    "footer.tiktok": "TikTok",
+    "footer.copyright": "© 2025 JoJo Labs. Բոլոր իրավունքները պաշտպանված են:",
+
+    // Face Care Page
+    "facecare.title": "Դեմքի խնամք",
+    "facecare.desc": "Բացահայտեք մեր հավաքածուն:",
+    "facecare.filter": "Ֆիլտր",
+    "facecare.categories": "Կատեգորիաներ:",
+    "facecare.products": "ապրանքներ",
+    "facecare.loadmore": "Ավելի շատ ապրանքներ",
+    "facecare.cat.all": "Բոլորը",
+    "facecare.cat.serums": "Սերումներ",
+    "facecare.cat.essences": "Էսենսներ",
+    "facecare.cat.treatments": "Բուժումներ",
+    "facecare.cat.masks": "Դիմակներ",
+    "facecare.cat.toners": "Տոներներ",
+    "facecare.cat.sunscreens": "Արևապաշտպան",
+    "facecare.cat.ampoules": "Ամպուլներ",
+    "facecare.cat.cleansers": "Մաքրիչներ",
+    "facecare.cat.moisturizers": "Խոնավացուցիչներ",
+    "facecare.cat.exfoliants": "Քերիչներ",
+
+    // Product
+    "product.instock": "Առկա է",
+    "product.lowstock": "Քիչ մնացել է",
+    "product.outofstock": "Չկա պահեստում",
+    "product.unavailable": "Այս ապրանքը ներկայումս չկա",
+
+    // About Page
+    "about.title": "JoJo Labs-ի մասին",
+    "about.subtitle": "Ծնված գեղեցկության և տեխնոլոգիայի կիրքից:",
+    "about.story": "Մեր պատմությունը",
+    "about.story.p1": "Հիմնադրված 2025-ին, մենք միավորում ենք նորարարությունը:",
+    "about.story.p2": "Մեր ճանապարհորդությունը սկսվեց պարզ հարցով:",
+    "about.story.p3": "JoJo Labs-ը բարելավում է ձեր գնումների փորձը:",
+    "about.delivery": "Տան առաքում",
+    "about.delivery.subtitle": "Արագ առաքում Հայաստանում",
+    "about.delivery.p1": "Մենք համագործակցում ենք Glovo-ի հետ:",
+    "about.delivery.p2": "Վայելեք նույն օրվա առաքումը:",
+    "about.delivery.info": "Առաքման տեղեկություններ:",
+    "about.delivery.yerevan": "Երևան: Նույն օրվա առաքում (1-2 ժամ)",
+    "about.delivery.cities": "Խոշոր քաղաքներ: Նույն օրը",
+    "about.delivery.armenia": "Ամբողջ Հայաստան: 24-48 ժամ",
+    "about.delivery.free": "Անվճար առաքում: 10,000 դրամից վեր",
+    "about.values": "Մեր արժեքները",
+    "about.values.transparency": "Թափանցիկություն",
+    "about.values.transparency.desc": "Բոլոր ապրանքները փորձարկվում են:",
+    "about.values.personalization": "Անհատականացում",
+    "about.values.personalization.desc": "Անհատական ռուտիններ ձեզ համար:",
+    "about.values.efficiency": "Արդյունավետություն",
+    "about.values.efficiency.desc": "Վերջին տեխնոլոգիաները ինտեգրված են:",
+    "about.contact": "Կապվեք մեզ հետ",
+    "about.contact.desc": "Հարցեր ունե՞ք: Մենք կցանկանայինք լսել ձեզնից:",
+    "about.contact.cta": "Կապվեք մեզ հետ",
+    "about.contact.routine": "Գտեք ձեր ռուտինան",
+
+    // Contact Page
+    "contact.title": "Կապվեք մեզ հետ",
+    "contact.subtitle": "Մենք կցանկանայինք լսել ձեզնից:",
+    "contact.form": "Ուղարկեք մեզ հաղորդագրություն",
+    "contact.form.desc": "Լրացրեք ստորև բերված ձևը:",
+    "contact.form.firstname": "Անուն",
+    "contact.form.firstname.placeholder": "Ձեր անունը",
+    "contact.form.lastname": "Ազգանուն",
+    "contact.form.lastname.placeholder": "Ձեր ազգանունը",
+    "contact.form.email": "Էլ․ փոստ",
+    "contact.form.email.placeholder": "your.email@example.com",
+    "contact.form.phone": "Հեռախոս (ըստ ցանկության)",
+    "contact.form.phone.placeholder": "+374 XX XXX XXX",
+    "contact.form.subject": "Թեմա",
+    "contact.form.subject.placeholder": "Ինչպե՞ս կարող ենք օգնել:",
+    "contact.form.message": "Հաղորդագրություն",
+    "contact.form.message.placeholder": "Պատմեք մեզ ավելին...",
+    "contact.form.send": "Ուղարկել հաղորդագրություն",
+    "contact.info": "Կապվեք",
+    "contact.info.desc": "Այցելեք մեր խանութ:",
+    "contact.info.address": "Այցելեք մեր խանութ",
+    "contact.info.address.value": "123 Հանրապետության հրապարակ\nԵրևան 0010, Հայաստան",
+    "contact.info.phone": "Զանգահարեք մեզ",
+    "contact.info.phone.value": "+374 10 123 456",
+    "contact.info.email": "Գրեք մեզ",
+    "contact.info.email.value": "hello@jojolabs.com",
+    "contact.info.hours": "Աշխատանքային ժամեր",
+    "contact.info.hours.value": "Երկ-Ուրբ: 10:00 - 20:00",
+    "contact.social": "Հետևեք մեզ",
+    "contact.social.desc": "Մնացեք տեղեկացված մեր նորություններից:",
+    "contact.faq": "Հաճախ տրվող հարցեր",
+    "contact.faq.desc": "Արագ պատասխաններ",
+    "contact.faq.q1": "Դուք առաջարկու՞մ եք միջազգային առաքում:",
+    "contact.faq.a1": "Ներկայումս մենք առաքում ենք Հայաստանում:",
+    "contact.faq.q2": "Ո՞րն է ձեր վերադարձի քաղաքականությունը:",
+    "contact.faq.a2": "Մենք առաջարկում ենք 30-օրյա վերադարձի քաղաքականություն:",
+    "contact.faq.q3": "Արդյո՞ք ձեր ապրանքները բարեգործական են:",
+    "contact.faq.a3": "Այո, մեր բոլոր ապրանքները բարեգործական են:",
+    "contact.faq.q4": "Ինչպե՞ս հետևել իմ պատվերին:",
+    "contact.faq.a4": "Դուք կստանաք հետագծման համար էլ․ փոստով:",
+
+    // Routine Finder
+    "routine.step": "Քայլ",
+    "routine.of": "ից",
+    "routine.skintype": "Ո՞րն է ձեր մաշկի տեսակը:",
+    "routine.sensitive": "Դուք ունե՞ք զգայուն մաշկ:",
+    "routine.sensitive.yes": "Այո",
+    "routine.sensitive.no": "Ոչ",
+    "routine.routinesteps": "Քանի՞ քայլ կա ձեր ռուտինայում:",
+    "routine.routinesteps.short": "1–3 քայլ",
+    "routine.routinesteps.medium": "4–5 քայլ",
+    "routine.routinesteps.long": "6+ քայլ",
+    "routine.concerns": "Ընտրեք ձեր հիմնական խնդիրները (մինչև 5)",
+    "routine.back": "Հետ",
+    "routine.next": "Հաջորդ",
+    "routine.see": "Տեսնել իմ ռուտինան",
+    "routine.generating": "Ստեղծվում է…",
+    "routine.result": "Ձեր անհատական ռուտինան ✨",
+    "routine.morning": "Առավոտյան ռուտին",
+    "routine.morning.emoji": "☀️ Սկսեք օրը փայլով!",
+    "routine.evening": "Երեկոյան ռուտին",
+    "routine.evening.emoji": "🌙 Հանգստացեք",
+    "routine.weekly": "📅 Շաբաթական պլան",
+    "routine.products": "🛍️ Ձեր ապրանքները",
+    "routine.ingredients": "✨ Առաջարկվող բաղադրիչներ:",
+    "routine.addtocart": "Ավելացնել զամբյուղ",
+    "routine.skintype.oily": "Յուղոտ",
+    "routine.skintype.dry": "Չոր",
+    "routine.skintype.combination": "Խառը",
+    "routine.skintype.normal": "Նորմալ",
+    "routine.concern.acne": "Պզուկներ",
+    "routine.concern.pores": "Ծակոտիներ",
+    "routine.concern.pigment": "Մուգ բծեր",
+    "routine.concern.texture": "Փայլ/Հյուսվածք",
+    "routine.concern.dehydration": "Ջրազրկում",
+    "routine.concern.dryness": "Չորություն",
+    "routine.concern.aging": "Կնճիռներ",
+    "routine.concern.sensitivity": "Զգայունություն",
+    "routine.concern.uneven": "Անհավասար տոն",
   },
 }
 
-export type Language = "en" | "ru"
-
 export function getTranslation(key: string, lang: Language): string {
-  return translations[lang]?.[key as keyof typeof translations.en] || key
+  const translation = translations[lang]?.[key as keyof (typeof translations)[typeof lang]]
+  if (translation) return translation as string
+
+  // Fallback to English if translation not found
+  const fallback = translations.en?.[key as keyof typeof translations.en]
+  if (fallback) return fallback as string
+
+  // Return key if no translation found
+  return key
 }
 
 export function isValidLanguage(lang: string): lang is Language {
-  return lang === "en" || lang === "ru"
+  return lang === "en" || lang === "ru" || lang === "hy"
 }
 
 export const AVAILABLE_LANGUAGES: Array<{ code: Language; name: string }> = [
   { code: "en", name: "English" },
   { code: "ru", name: "Русский" },
+  { code: "hy", name: "Հայերեն" },
 ]
