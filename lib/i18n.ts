@@ -23,6 +23,7 @@ export const translations = {
     "home.facecare.desc": "Cleansers, serums & moisturizers",
     "home.routinefinder": "Routine Finder",
     "home.routinefinder.desc": "Personalized skincare routine",
+    "home.seeMoreProducts": "See More Products",
 
     // Footer
     "footer.tagline": "Premium skincare and cosmetics for your natural beauty, from JoJo Labs.",
@@ -57,6 +58,20 @@ export const translations = {
     "product.lowstock": "Low Stock",
     "product.outofstock": "Out of Stock",
     "product.unavailable": "This product is currently out of stock",
+    "product.loading": "Loading...",
+    "product.notfound": "Product not found",
+    "product.eco": "ECO",
+    "product.reviews": "reviews",
+    "product.addtocart": "Add to Cart",
+    "product.size": "Size",
+    "product.skintype": "Skin Type",
+    "product.whyyoulllove": "Why You'll Love It",
+    "product.howtouse": "How to Use",
+    "product.ingredients": "Ingredients",
+    "product.skinconcerns": "Skin Concerns",
+    "product.keybenefits": "Key Benefits",
+    "product.keyingredients": "Key Ingredients",
+    "product.addressesconcerns": "This product addresses these concerns",
 
     // About Page
     "about.title": "About JoJo Labs",
@@ -170,7 +185,7 @@ export const translations = {
     // Navigation
     "nav.facecare": "Уход за лицом",
     "nav.about": "О нас",
-    "nav.routinefinder": "Подбор рутины",
+    "nav.routinefinder": "Подбор ухода",
     "nav.contact": "Контакты",
 
     // Home Page
@@ -186,8 +201,9 @@ export const translations = {
     "home.categories": "Покупайте по категориям",
     "home.facecare": "Уход за лицом",
     "home.facecare.desc": "Очищающие средства, сыворотки",
-    "home.routinefinder": "Подбор рутины",
+    "home.routinefinder": "Подбор ухода",
     "home.routinefinder.desc": "Персонализированная процедура",
+    "home.seeMoreProducts": "Показать больше товаров",
 
     // Footer
     "footer.tagline": "Премиальный уход за кожей от JoJo Labs.",
@@ -222,6 +238,20 @@ export const translations = {
     "product.lowstock": "Мало на складе",
     "product.outofstock": "Нет в наличии",
     "product.unavailable": "Этот товар в данный момент недоступен",
+    "product.loading": "Загрузка...",
+    "product.notfound": "Товар не найден",
+    "product.eco": "ЭКО",
+    "product.reviews": "отзывов",
+    "product.addtocart": "Добавить в корзину",
+    "product.size": "Объем",
+    "product.skintype": "Тип кожи",
+    "product.whyyoulllove": "Почему вам понравится",
+    "product.howtouse": "Как использовать",
+    "product.ingredients": "Ингредиенты",
+    "product.skinconcerns": "Проблемы кожи",
+    "product.keybenefits": "Основные преимущества",
+    "product.keyingredients": "Ключевые ингредиенты",
+    "product.addressesconcerns": "Этот продукт решает следующие проблемы",
 
     // About Page
     "about.title": "О JoJo Labs",
@@ -335,7 +365,7 @@ export const translations = {
     // Navigation
     "nav.facecare": "Դեմքի խնամք",
     "nav.about": "Մեր մասին",
-    "nav.routinefinder": "Ռուտինայի որոնում",
+    "nav.routinefinder": "Խնամքի ընտրություն",
     "nav.contact": "Կապ",
 
     // Home Page
@@ -351,8 +381,9 @@ export const translations = {
     "home.categories": "Գնումներ ըստ կատեգորիայի",
     "home.facecare": "Դեմքի խնամք",
     "home.facecare.desc": "Մաքրիչներ, սերումներ",
-    "home.routinefinder": "Ռուտինայի որոնում",
+    "home.routinefinder": "Խնամքի ընտրություն",
     "home.routinefinder.desc": "Անհատական խնամք",
+    "home.seeMoreProducts": "Տեսնել ավելի ապրանքներ",
 
     // Footer
     "footer.tagline": "Պրեմիում մաշկի խնամք JoJo Labs-ից:",
@@ -387,6 +418,20 @@ export const translations = {
     "product.lowstock": "Քիչ մնացել է",
     "product.outofstock": "Չկա պահեստում",
     "product.unavailable": "Այս ապրանքը ներկայումս չկա",
+    "product.loading": "Բեռնվում է...",
+    "product.notfound": "Ապրանքը չի գտնվել",
+    "product.eco": "ԷԿՈ",
+    "product.reviews": "կարծիքներ",
+    "product.addtocart": "Ավելացնել զամբյուղում",
+    "product.size": "Ծավալ",
+    "product.skintype": "Մաշկի տեսակ",
+    "product.whyyoulllove": "Ինչու կսիրեք",
+    "product.howtouse": "Ինչպե՞ս օգտագործել",
+    "product.ingredients": "Բաղադրիչներ",
+    "product.skinconcerns": "Մաշկի խնդիրներ",
+    "product.keybenefits": "Հիմնական առավելություններ",
+    "product.keyingredients": "Հիմնական բաղադրիչներ",
+    "product.addressesconcerns": "Այս արտադրանքը լուծում է հետևյալ խնդիրները",
 
     // About Page
     "about.title": "JoJo Labs-ի մասին",

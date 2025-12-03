@@ -2,19 +2,47 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Star, Heart, Share2 } from "lucide-react"
+import Link from "next/link"
+import { Star, Heart, Share2, ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCart } from "@/components/shopping-cart"
-import { allProducts } from "@/lib/all-products"
 import { useTranslation } from "@/hooks/use-translation"
+import { HeaderWithSearch } from "@/components/header-with-search"
+import { Footer } from "@/components/footer"
 
-// --- Skin Concern inference helpers -----------------------------------------
+type Product = {
+  id: string
+  name: string
+  name_ru?: string
+  name_hy?: string
+  price: string
+  image: string
+  category: string
+  description: string
+  description_ru?: string
+  description_hy?: string
+  benefits?: string[]
+  benefits_ru?: string[]
+  benefits_hy?: string[]
+  how_to_use?: string[]
+  how_to_use_ru?: string[]
+  how_to_use_hy?: string[]
+  ingredients?: string[]
+  skin_type?: string
+  skin_type_ru?: string
+  skin_type_hy?: string
+  size?: string
+  rating?: number
+  reviews?: number
+  stock?: number
+  in_stock?: boolean
+  eco?: boolean
+}
 
-type ProductT = (typeof allProducts)[keyof typeof allProducts]
+type ProductT = Product
 
-// Map ingredient keywords/regex → concerns
 const INGREDIENT_RULES: Array<{ test: RegExp; concerns: string[] }> = [
   { test: /niacinamide/i, concerns: ["Enlarged Pores", "Active Breakouts", "Excess Oil", "Uneven Tone"] },
   { test: /zinc\s*pca/i, concerns: ["Active Breakouts", "Excess Oil", "Redness & Irritation"] },
@@ -72,7 +100,6 @@ const INGREDIENT_RULES: Array<{ test: RegExp; concerns: string[] }> = [
   },
 ]
 
-// Category fallback so every page shows something useful
 const CATEGORY_FALLBACK: Record<string, string[]> = {
   Cleansers: ["Impurities & Residue", "Excess Oil", "Congestion", "Dehydration"],
   Toners: ["Dehydration", "pH Imbalance", "Redness & Irritation", "Sensitivity"],
@@ -114,7 +141,6 @@ function inferConcerns(product: ProductT): string[] {
     if (matched) hits.push(...rule.concerns)
   }
 
-  // If nothing from ingredients, fall back to category defaults
   const withFallback =
     hits.length > 0
       ? hits
@@ -124,11 +150,9 @@ function inferConcerns(product: ProductT): string[] {
           "Dullness",
         ])
 
-  // Tidy up & cap the list
   return uniqueOrder(withFallback).slice(0, MAX_CONCERNS)
 }
 
-// Badge color rules by concern theme
 function badgeClassForConcern(c: string): string {
   const s = c.toLowerCase()
 
@@ -144,13 +168,11 @@ function badgeClassForConcern(c: string): string {
   return "bg-gray-100 text-gray-800"
 }
 
-// Function to find relevant products based on routine logic
 function findRelevantProducts(currentProduct: ProductT): ProductT[] {
   const allProductsArray = Object.values(allProducts)
   const currentConcerns = inferConcerns(currentProduct)
   const currentCategory = currentProduct.category
 
-  // Define routine order and complementary categories
   const routineOrder = ["Cleansers", "Toners", "Essences", "Serums", "Treatments", "Moisturizers", "Sunscreens"]
   const complementaryCategories: Record<string, string[]> = {
     Cleansers: ["Toners", "Essences", "Moisturizers"],
@@ -164,24 +186,20 @@ function findRelevantProducts(currentProduct: ProductT): ProductT[] {
     Masks: ["Moisturizers", "Essences", "Serums"],
   }
 
-  // Score products based on relevance
   const scoredProducts = allProductsArray
-    .filter((product) => product.id !== currentProduct.id) // Exclude current product
+    .filter((product) => product.id !== currentProduct.id)
     .map((product) => {
       let score = 0
       const productConcerns = inferConcerns(product)
 
-      // 1. Shared concerns (highest priority)
       const sharedConcerns = currentConcerns.filter((concern) => productConcerns.includes(concern))
       score += sharedConcerns.length * 3
 
-      // 2. Complementary categories
       const complementary = complementaryCategories[currentCategory] || []
       if (complementary.includes(product.category)) {
         score += 2
       }
 
-      // 3. Same skin type compatibility
       if (
         product.skinType === currentProduct.skinType ||
         product.skinType === "All skin types" ||
@@ -190,21 +208,17 @@ function findRelevantProducts(currentProduct: ProductT): ProductT[] {
         score += 1
       }
 
-      // 4. Routine logic - prefer products that come before/after in routine
       const currentIndex = routineOrder.indexOf(currentCategory)
       const productIndex = routineOrder.indexOf(product.category)
       if (currentIndex !== -1 && productIndex !== -1) {
         const distance = Math.abs(currentIndex - productIndex)
-        if (distance === 1)
-          score += 2 // Adjacent in routine
-        else if (distance === 2) score += 1 // Close in routine
+        if (distance === 1) score += 2
+        else if (distance === 2) score += 1
       }
 
-      // 5. Special ingredient synergies
       const currentIngredients = currentProduct.ingredients.join(" ").toLowerCase()
       const productIngredients = product.ingredients.join(" ").toLowerCase()
 
-      // Niacinamide pairs well with hyaluronic acid, ceramides
       if (
         currentIngredients.includes("niacinamide") &&
         (productIngredients.includes("hyaluronic") || productIngredients.includes("ceramide"))
@@ -212,7 +226,6 @@ function findRelevantProducts(currentProduct: ProductT): ProductT[] {
         score += 2
       }
 
-      // Vitamin C pairs well with moisturizers and sunscreens
       if (
         currentIngredients.includes("ascorbic") &&
         (product.category === "Moisturizers" || product.category === "Sunscreens")
@@ -220,7 +233,6 @@ function findRelevantProducts(currentProduct: ProductT): ProductT[] {
         score += 2
       }
 
-      // Exfoliants need soothing follow-ups
       if (
         currentCategory === "Exfoliants" &&
         (productIngredients.includes("centella") || productIngredients.includes("panthenol"))
@@ -228,18 +240,16 @@ function findRelevantProducts(currentProduct: ProductT): ProductT[] {
         score += 2
       }
 
-      // Cleansers should be followed by hydrating products
       if (currentCategory === "Cleansers" && (product.category === "Toners" || product.category === "Essences")) {
         score += 2
       }
 
       return { product, score }
     })
-    .sort((a, b) => b.score - a.score) // Sort by score descending
-    .slice(0, 6) // Take top 6 candidates
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6)
     .map((item) => item.product)
 
-  // Ensure we have at least 3 products, fill with popular items if needed
   if (scoredProducts.length < 3) {
     const fallbackProducts = [
       allProducts["beauty-of-joseon-relief-sun-rice-probiotics-spf-50"],
@@ -253,28 +263,28 @@ function findRelevantProducts(currentProduct: ProductT): ProductT[] {
     scoredProducts.push(...fallbackProducts.slice(0, 3 - scoredProducts.length))
   }
 
-  return scoredProducts.slice(0, 3) // Return top 3
+  return scoredProducts.slice(0, 3)
 }
 
 export default function ProductPage({ params }: { params: { id: string } }) {
-  const { dispatch } = useCart()
+  const { addItem } = useCart()
   const { t, language } = useTranslation()
-  const [productData, setProductData] = useState<any>(null)
+  const [quantity, setQuantity] = useState(1)
+  const [isFavorite, setIsFavorite] = useState(false)
+
+  const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Find product from static data as fallback
-  const staticProduct = allProducts.find((p) => p.id === params.id)
-
   useEffect(() => {
-    const fetchProduct = async () => {
+    async function fetchProduct() {
       try {
         const response = await fetch(`/api/products/${params.id}`)
         if (response.ok) {
           const data = await response.json()
-          setProductData(data)
+          setProduct(data)
         }
       } catch (error) {
-        console.error("Error fetching product:", error)
+        console.error("[v0] Error fetching product:", error)
       } finally {
         setLoading(false)
       }
@@ -282,377 +292,269 @@ export default function ProductPage({ params }: { params: { id: string } }) {
     fetchProduct()
   }, [params.id])
 
-  const product = productData || staticProduct
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <HeaderWithSearch />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600"></div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
 
   if (!product) {
-    return <div className="container mx-auto px-4 py-8">Product not found</div>
+    return (
+      <div className="min-h-screen flex flex-col">
+        <HeaderWithSearch />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">{t("product.notfound") || "Product not found"}</h1>
+            <Link href="/face-care">
+              <Button variant="outline">
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                {t("product.backtostore") || "Back to Store"}
+              </Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
   }
+
+  const getTranslatedField = (field: string): string => {
+    if (language === "ru" && product[`${field}_ru` as keyof Product]) {
+      return product[`${field}_ru` as keyof Product] as string
+    }
+    if (language === "hy" && product[`${field}_hy` as keyof Product]) {
+      return product[`${field}_hy` as keyof Product] as string
+    }
+    return product[field as keyof Product] as string
+  }
+
+  const getTranslatedArray = (field: string): string[] => {
+    if (language === "ru" && product[`${field}_ru` as keyof Product]) {
+      return product[`${field}_ru` as keyof Product] as string[]
+    }
+    if (language === "hy" && product[`${field}_hy` as keyof Product]) {
+      return product[`${field}_hy` as keyof Product] as string[]
+    }
+    return (product[field as keyof Product] as string[]) || []
+  }
+
+  const productName = getTranslatedField("name")
+  const productDescription = getTranslatedField("description")
+  const productBenefits = getTranslatedArray("benefits")
+  const productHowToUse = getTranslatedArray("how_to_use")
+  const productSkinType = getTranslatedField("skin_type")
 
   const getStockStatus = () => {
     const currentStock = product.stock ?? 0
-    const inStock = product.in_stock ?? product.inStock ?? true
-    const lowStockThreshold = 10
+    const inStock = product.in_stock ?? true
 
     if (!inStock || currentStock === 0) {
-      return { label: t("product.outofstock"), color: "bg-red-100 text-red-800 border-red-200", available: false }
+      return {
+        label: t("product.outofstock") || "Out of Stock",
+        color: "bg-red-100 text-red-800 border-red-200",
+        available: false,
+      }
     }
-    if (currentStock <= lowStockThreshold) {
-      return { label: t("product.lowstock"), color: "bg-amber-100 text-amber-800 border-amber-200", available: true }
+    if (currentStock <= 10) {
+      return {
+        label: t("product.lowstock") || "Low Stock",
+        color: "bg-amber-100 text-amber-800 border-amber-200",
+        available: true,
+      }
     }
-    return { label: t("product.instock"), color: "bg-green-100 text-green-800 border-green-200", available: true }
+    return {
+      label: t("product.instock") || "In Stock",
+      color: "bg-green-100 text-green-800 border-green-200",
+      available: true,
+    }
   }
 
   const stockStatus = getStockStatus()
+  const concerns = inferConcerns(product as ProductT)
 
-  const addToCart = () => {
-    if (!stockStatus.available) {
-      return // Prevent adding out of stock items
-    }
-    dispatch({
-      type: "ADD_ITEM",
-      payload: {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-      },
+  const handleAddToCart = () => {
+    if (!stockStatus.available) return
+
+    addItem({
+      id: product.id,
+      name: productName,
+      price: product.price,
+      image: product.image,
+      quantity,
     })
   }
 
-  // Get relevant products based on the current product
-  const relatedProducts = findRelevantProducts(product)
-
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Image */}
-          <div className="space-y-6">
-            <div className="aspect-[3/4] bg-gradient-to-br from-rose-50 to-pink-100 rounded-3xl p-8 relative">
-              <Image
-                src={product.image || "/placeholder.svg"}
-                alt={product.name}
-                width={400}
-                height={600}
-                className="w-full h-full object-contain"
-              />
-              {product.eco && <Badge className="absolute top-4 left-4 bg-green-600 hover:bg-green-700">ECO</Badge>}
-            </div>
+    <div className="min-h-screen flex flex-col">
+      <HeaderWithSearch />
+      <main className="flex-grow container mx-auto px-4 py-8">
+        <nav className="mb-6">
+          <Link
+            href="/face-care"
+            className="inline-flex items-center text-sm text-gray-600 hover:text-rose-600 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            {t("product.backtostore") || "Back to Face Care"}
+          </Link>
+        </nav>
 
-            {/* Product Highlights */}
-            <div className="bg-gray-50 rounded-3xl p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Why You'll Love It</h3>
-              <ul className="space-y-3">
-                {product.benefits.slice(0, 5).map((benefit, index) => (
-                  <li key={index} className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-rose-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <span className="text-sm text-gray-700">{benefit}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <div className="grid md:grid-cols-2 gap-8 mb-12">
+          <div className="relative aspect-square bg-gradient-to-br from-rose-50 to-pink-100 rounded-3xl overflow-hidden">
+            <Image src={product.image || "/placeholder.svg"} alt={productName} fill className="object-cover" />
+            {product.eco && (
+              <Badge className="absolute top-4 left-4 bg-green-100 text-green-800">{t("product.eco") || "ECO"}</Badge>
+            )}
           </div>
 
-          {/* Product Info */}
-          <div className="space-y-8">
-            {/* Header Info */}
-            <div className="space-y-6">
-              <div className="flex items-center space-x-3">
-                <Badge variant="outline" className="text-xs font-medium">
-                  {product.category}
-                </Badge>
-                <Badge className={`${stockStatus.color} hover:${stockStatus.color} text-xs font-medium`}>
-                  {stockStatus.label}
-                </Badge>
-                {product.eco && (
-                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Eco-Friendly</Badge>
-                )}
-              </div>
-
-              <div>
-                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{product.name}</h1>
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="flex items-center space-x-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                        }`}
-                      />
-                    ))}
-                    <span className="text-sm text-gray-600 ml-2">
-                      {product.rating} ({product.reviews} reviews)
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-baseline space-x-4 mb-6">
-                  <span className="text-3xl font-bold text-gray-900">{product.price}</span>
-                  <span className="text-sm text-gray-500">• {product.size}</span>
+          <div className="space-y-6">
+            <div>
+              <p className="text-sm text-gray-500 uppercase tracking-wide mb-2">
+                {t(`category.${product.category.toLowerCase()}`) || product.category}
+              </p>
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">{productName}</h1>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-5 h-5 ${
+                        i < Math.floor(product.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                  <span className="ml-2 text-sm text-gray-600">
+                    {product.rating || 0} ({product.reviews || 0} {t("product.reviews") || "reviews"})
+                  </span>
                 </div>
               </div>
 
-              <div className="prose prose-gray max-w-none">
-                <p className="text-lg text-gray-700 leading-relaxed">{product.description}</p>
-              </div>
+              <Badge variant="outline" className={`${stockStatus.color} text-sm font-medium mb-4`}>
+                {stockStatus.label}
+              </Badge>
+
+              <p className="text-3xl font-bold text-rose-600 mb-4">{product.price}</p>
+              <p className="text-gray-600 leading-relaxed">{productDescription}</p>
             </div>
 
-            {/* Product Specifications */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">Skin Type</h4>
-                <p className="text-gray-700">{product.skinType}</p>
-              </div>
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">Texture</h4>
-                <p className="text-gray-700">
-                  {product.category === "Serums"
-                    ? "Lightweight, fast-absorbing serum"
-                    : product.category === "Essences"
-                      ? "Viscous, hydrating essence"
-                      : product.category === "Cleansers"
-                        ? "Gentle, low-foam gel"
-                        : product.category === "Toners"
-                          ? "Refreshing, watery texture"
-                          : product.category === "Treatments" && product.name.includes("AHA")
-                            ? "3.5-4.0"
-                            : "6.0-7.0"}
-                </p>
-              </div>
-            </div>
-
-            {/* Add to Cart Section */}
-            <div className="space-y-6 border-t border-gray-200 pt-8">
-              <div className="flex space-x-4">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center border rounded-lg">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-4 py-2 hover:bg-gray-100"
+                  >
+                    -
+                  </button>
+                  <span className="px-6 py-2 border-x">{quantity}</span>
+                  <button onClick={() => setQuantity(quantity + 1)} className="px-4 py-2 hover:bg-gray-100">
+                    +
+                  </button>
+                </div>
                 <Button
-                  size="lg"
-                  className="flex-1 bg-gray-900 hover:bg-gray-800 h-14 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={addToCart}
+                  onClick={handleAddToCart}
                   disabled={!stockStatus.available}
+                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white"
                 >
-                  {stockStatus.available ? t("product.addtocart") : t("product.outofstock")}
-                </Button>
-                <Button size="lg" variant="outline" className="p-4 bg-transparent border-2">
-                  <Heart className="w-5 h-5" />
-                </Button>
-                <Button size="lg" variant="outline" className="p-4 bg-transparent border-2">
-                  <Share2 className="w-5 h-5" />
+                  {stockStatus.available
+                    ? t("product.addtocart") || "Add to Cart"
+                    : t("product.outofstock") || "Out of Stock"}
                 </Button>
               </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="icon" onClick={() => setIsFavorite(!isFavorite)}>
+                  <Heart className={isFavorite ? "fill-rose-600 text-rose-600" : ""} />
+                </Button>
+                <Button variant="outline" size="icon">
+                  <Share2 />
+                </Button>
+              </div>
+            </div>
 
-              {stockStatus.available ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-sm text-green-800 font-medium">
-                    {product.stock && product.stock <= 10
-                      ? `${t("product.onlyleft")}: ${product.stock} ${t("product.items")}`
-                      : t("product.availablenow")}
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-sm text-red-800 font-medium">{t("product.outofstockmessage")}</p>
+            <div className="border-t pt-6 space-y-2">
+              {product.size && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">{t("product.size") || "Size"}:</span>
+                  <span className="font-medium">{product.size}</span>
                 </div>
               )}
-
-              {/* Tabs Section */}
-              <Tabs defaultValue="details" className="space-y-4">
-                <TabsList>
-                  <TabsTrigger value="details">{t("product.details")}</TabsTrigger>
-                  <TabsTrigger value="ingredients">{t("product.ingredients")}</TabsTrigger>
-                  <TabsTrigger value="reviews">{t("product.reviews")}</TabsTrigger>
-                </TabsList>
-                <TabsContent value="details">
-                  <div className="space-y-4">
-                    <div className="flex justify-between py-3 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">{t("product.size")}</span>
-                      <span className="text-gray-700">{product.size}</span>
-                    </div>
-                    <div className="flex justify-between py-3 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">{t("product.skintype")}</span>
-                      <span className="text-gray-700">{product.skinType}</span>
-                    </div>
-                    <div className="flex justify-between py-3 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">{t("product.category")}</span>
-                      <span className="text-gray-700">{product.category}</span>
-                    </div>
-                    <div className="flex justify-between py-3 border-b border-gray-100">
-                      <span className="font-medium text-gray-900">{t("product.phlevel")}</span>
-                      <span className="text-gray-700">
-                        {product.category === "Cleansers"
-                          ? "5.0-6.0"
-                          : product.category === "Toners"
-                            ? "5.5-6.5"
-                            : product.category === "Treatments" && product.name.includes("AHA")
-                              ? "3.5-4.0"
-                              : "6.0-7.0"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-3">
-                      <span className="font-medium text-gray-900">{t("product.crueltyfree")}</span>
-                      <span className="text-green-600 font-medium">✓ Yes</span>
-                    </div>
-                  </div>
-                </TabsContent>
-                <TabsContent value="ingredients">
-                  <div className="space-y-4">
-                    {product.ingredients.slice(0, 6).map((ingredient, index) => (
-                      <div key={index} className="border border-gray-200 rounded-3xl p-4">
-                        <h4 className="font-semibold text-gray-900 mb-2">{ingredient}</h4>
-                        <p className="text-sm text-gray-600">
-                          {ingredient.includes("Niacinamide") &&
-                            "A form of Vitamin B3 that helps regulate oil production, brighten skin, and strengthen the skin barrier."}
-                          {ingredient.includes("Zinc PCA") &&
-                            "Regulates oil production and has anti-inflammatory properties"}
-                          {ingredient.includes("Hyaluronic") &&
-                            "A powerful humectant that attracts and retains up to 1000x its weight in water for deep hydration."}
-                          {ingredient.includes("Glycolic") &&
-                            "An alpha hydroxy acid (AHA) that gently exfoliates dead skin cells for smoother, more radiant skin."}
-                          {ingredient.includes("Retinol") &&
-                            "A vitamin A derivative that promotes cell turnover, boosts collagen production, and smooths fine lines."}
-                          {ingredient.includes("Centella") &&
-                            "A soothing botanical rich in asiaticoside and madecassoside, known to calm inflammation and promote healing."}
-                          {ingredient.includes("Tea Tree") &&
-                            "Natural antibacterial and anti-inflammatory properties help reduce acne and purify skin."}
-                          {ingredient.includes("Rice") &&
-                            "Rich in vitamins, minerals, and amino acids to nourish, hydrate, and brighten skin."}
-                          {ingredient.includes("Heartleaf") &&
-                            "Derived from Houttuynia Cordata, helps reduce redness, soothe irritation, and balance oil production."}
-                          {ingredient.includes("Panthenol") &&
-                            "Also known as Vitamin B5, deeply hydrates and soothes, supporting a healthy skin barrier."}
-                          {ingredient.includes("Ceramide") &&
-                            "Lipids that reinforce the skin barrier, lock in moisture, and protect from environmental stressors."}
-                          {ingredient.includes("Squalane") &&
-                            "A lightweight, non-comedogenic oil that moisturizes and balances without clogging pores."}
-                          {ingredient.includes("Allantoin") &&
-                            "A calming agent that soothes irritation and promotes skin healing."}
-                          {ingredient.includes("Olea Europaea") &&
-                            "Olive fruit oil rich in antioxidants and fatty acids to nourish and soften skin."}
-                          {ingredient.includes("Macadamia") &&
-                            "Macadamia seed oil is rich in oleic acid and palmitoleic acid to deeply nourish dry skin."}
-                          {ingredient.includes("Lactobacillus") &&
-                            "Fermented probiotic ingredient that strengthens skin barrier and supports a healthy microbiome."}
-                          {ingredient.includes("Isoamyl p-Methoxycinnamate") &&
-                            "A UV filter that helps protect skin from sun damage."}
-                          {ingredient.includes("Salicylic") &&
-                            "A beta hydroxy acid (BHA) that exfoliates inside pores to reduce acne and congestion."}
-                          {ingredient.includes("LHA") &&
-                            "Lipo-Hydroxy Acid, a gentle derivative of salicylic acid that exfoliates and smooths skin."}
-                          {ingredient.includes("Kaolin") &&
-                            "A natural clay that absorbs excess oil and impurities while being gentle on skin."}
-                          {ingredient.includes("Bakuchiol") &&
-                            "A plant-based retinol alternative that smooths fine lines and improves firmness with less irritation."}
-                          {ingredient.includes("Peptide") &&
-                            "Short chains of amino acids that support collagen production and improve skin elasticity."}
-                          {ingredient.includes("Beta-Glucan") &&
-                            "A polysaccharide that soothes irritation, hydrates deeply, and supports skin repair."}
-                          {ingredient.includes("Aloe") &&
-                            "Aloe vera extract hydrates, soothes, and helps calm redness."}
-                          {ingredient.includes("Hydrolyzed Collagen") &&
-                            "Collagen broken down into smaller molecules to help plump and firm the skin."}
-                          {ingredient.includes("Sedum") &&
-                            "A succulent plant extract that hydrates, soothes, and strengthens the skin barrier."}
-                          {ingredient.includes("Morinda Citrifolia") &&
-                            "Also known as Noni, an antioxidant-rich fruit extract that calms and nourishes skin."}
-                          {ingredient.includes("Ascorbic Acid") &&
-                            "Vitamin C, a potent antioxidant that brightens skin, evens tone, and supports collagen."}
-                          {ingredient.includes("Tocopherol") &&
-                            "Vitamin E, an antioxidant that protects against free radicals and nourishes skin."}
-                          {ingredient.includes("Bifida Ferment Lysate") &&
-                            "A probiotic ferment that strengthens the skin barrier and improves resilience."}
-                          {ingredient.includes("Hydrolyzed Sponge") &&
-                            "Micro-spicule technology that gently stimulates skin to enhance absorption of actives."}
-                          {ingredient.includes("Glycerin") &&
-                            "A humectant that draws moisture into the skin and keeps it hydrated."}
-                          {ingredient.includes("Adenosine") &&
-                            "A skin-soothing and anti-aging ingredient that helps smooth fine lines."}
-                          {ingredient.includes("Oryza Sativa") &&
-                            "Rice extract rich in antioxidants, amino acids, and minerals for brightening and nourishing."}
-                          {ingredient.includes("Papaya") &&
-                            "Contains natural enzymes (papain) to gently exfoliate dead skin cells and promote smooth skin."}
-                          {ingredient.includes("Artemisia") &&
-                            "Mugwort extract that calms irritation, soothes sensitivity, and provides antioxidant benefits."}
-                          {ingredient.includes("Camellia Sinensis") &&
-                            "Green tea extract, rich in antioxidants, helps reduce redness and protect from environmental stressors."}
-                          {ingredient.includes("Bambusa") &&
-                            "Bamboo water helps hydrate, soothe, and strengthen the skin barrier."}
-                          {ingredient.includes("Ceramide NP") &&
-                            "A type of ceramide that replenishes the skin barrier and improves moisture retention."}
-                          {!(
-                            ingredient.includes("Niacinamide") ||
-                            ingredient.includes("Hyaluronic") ||
-                            ingredient.includes("Glycolic") ||
-                            ingredient.includes("Retinol") ||
-                            ingredient.includes("Centella") ||
-                            ingredient.includes("Tea Tree") ||
-                            ingredient.includes("Rice") ||
-                            ingredient.includes("Heartleaf") ||
-                            ingredient.includes("Panthenol") ||
-                            ingredient.includes("Ceramide") ||
-                            ingredient.includes("Squalane") ||
-                            ingredient.includes("Allantoin") ||
-                            ingredient.includes("Olea Europaea") ||
-                            ingredient.includes("Macadamia") ||
-                            ingredient.includes("Lactobacillus") ||
-                            ingredient.includes("Isoamyl p-Methoxycinnamate") ||
-                            ingredient.includes("Salicylic") ||
-                            ingredient.includes("LHA") ||
-                            ingredient.includes("Kaolin") ||
-                            ingredient.includes("Bakuchiol") ||
-                            ingredient.includes("Peptide") ||
-                            ingredient.includes("Beta-Glucan") ||
-                            ingredient.includes("Aloe") ||
-                            ingredient.includes("Hydrolyzed Collagen") ||
-                            ingredient.includes("Sedum") ||
-                            ingredient.includes("Morinda Citrifolia") ||
-                            ingredient.includes("Ascorbic Acid") ||
-                            ingredient.includes("Tocopherol") ||
-                            ingredient.includes("Bifida Ferment Lysate") ||
-                            ingredient.includes("Hydrolyzed Sponge") ||
-                            ingredient.includes("Glycerin") ||
-                            ingredient.includes("Adenosine") ||
-                            ingredient.includes("Oryza Sativa") ||
-                            ingredient.includes("Papaya") ||
-                            ingredient.includes("Artemisia") ||
-                            ingredient.includes("Camellia Sinensis") ||
-                            ingredient.includes("Bambusa") ||
-                            ingredient.includes("Ceramide NP")
-                          ) && "A carefully selected ingredient chosen for its proven skin benefits."}
-                        </p>
-                      </div>
-                    ))}
-                    {product.ingredients.length > 6 && (
-                      <p className="text-sm text-gray-500 italic">
-                        + {product.ingredients.length - 6} more ingredients
-                      </p>
-                    )}
-                  </div>
-                </TabsContent>
-                <TabsContent value="reviews">
-                  <div className="space-y-4">{/* Review Content Here */}</div>
-                </TabsContent>
-              </Tabs>
+              {productSkinType && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">{t("product.skintype") || "Skin Type"}:</span>
+                  <span className="font-medium">{productSkinType}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Recommended Products */}
-        <section className="mt-20 bg-gray-50 rounded-3xl p-8 lg:p-12">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t("product.completeyourroutine")}</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">{t("product.recommendedproductsmessage")}</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {relatedProducts.map((relatedProduct) => (
-              <div
-                key={relatedProduct.id}
-                className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow"
-              >
-                {/* ProductCard Component Here */}
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
+        <Tabs defaultValue="why" className="mb-12">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="why">{t("product.whyyoulllove") || "Why You'll Love It"}</TabsTrigger>
+            <TabsTrigger value="how">{t("product.howtouse") || "How to Use"}</TabsTrigger>
+            <TabsTrigger value="ingredients">{t("product.ingredients") || "Ingredients"}</TabsTrigger>
+            <TabsTrigger value="concerns">{t("product.skinconcerns") || "Skin Concerns"}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="why" className="space-y-4 pt-6">
+            <h3 className="text-xl font-semibold">{t("product.keybenefits") || "Key Benefits"}</h3>
+            <ul className="space-y-2">
+              {productBenefits.map((benefit, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-rose-600 mt-1">•</span>
+                  <span>{benefit}</span>
+                </li>
+              ))}
+            </ul>
+          </TabsContent>
+
+          <TabsContent value="how" className="space-y-4 pt-6">
+            <h3 className="text-xl font-semibold">{t("product.howtouse") || "How to Use"}</h3>
+            <ol className="space-y-3">
+              {productHowToUse.map((step, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-sm font-medium">
+                    {index + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </TabsContent>
+
+          <TabsContent value="ingredients" className="space-y-4 pt-6">
+            <h3 className="text-xl font-semibold">{t("product.keyingredients") || "Key Ingredients"}</h3>
+            <div className="flex flex-wrap gap-2">
+              {product.ingredients?.map((ingredient, index) => (
+                <Badge key={index} variant="secondary">
+                  {ingredient}
+                </Badge>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="concerns" className="space-y-4 pt-6">
+            <h3 className="text-xl font-semibold">{t("product.targetedconcerns") || "Targeted Skin Concerns"}</h3>
+            <div className="flex flex-wrap gap-2">
+              {concerns.map((concern, index) => (
+                <Badge key={index} variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">
+                  {concern}
+                </Badge>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </main>
+      <Footer />
     </div>
   )
 }
+
+const allProducts = {}
