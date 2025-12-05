@@ -188,11 +188,13 @@ function pickFor(
   wanted: string[],
   products: ProductMap,
   limit = 1,
-  opts?: { excludeOil?: boolean },
+  opts?: { excludeOil?: boolean; usedProducts?: Set<string> },
 ): string[] {
   const roles = STEP_ROLES[slot] || []
 
   const candidates = Object.keys(products).filter((id) => {
+    if (opts?.usedProducts?.has(id)) return false
+
     const prod = products[id]
     const role = roleFromProduct(prod.category, prod.name)
     if (!roles.includes(role)) return false
@@ -293,7 +295,6 @@ const CONCERN_ANALYSIS: Record<string, { desc: string; ingredients: string[] }> 
 }
 
 export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): RoutineResult {
-  // Use provided products or fall back to hardcoded allProducts
   const products: ProductMap = productsMap || (allProducts as unknown as ProductMap)
 
   const level = (input.routine || "easy").toLowerCase().replace("basic", "easy")
@@ -303,11 +304,16 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
   const AM: RoutineStep[] = []
   const PM: RoutineStep[] = []
 
+  const usedInAM = new Set<string>()
+  const usedInPM = new Set<string>()
+
   template.AM.forEach((slot) => {
     const pid =
       slot === "cleanser"
-        ? pickFor(slot, input, actives, products, 1, { excludeOil: true })[0]
-        : pickFor(slot, input, actives, products)[0]
+        ? pickFor(slot, input, actives, products, 1, { excludeOil: true, usedProducts: usedInAM })[0]
+        : pickFor(slot, input, actives, products, 1, { usedProducts: usedInAM })[0]
+
+    if (pid) usedInAM.add(pid)
 
     const label =
       slot === "cleanser"
@@ -332,7 +338,10 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
   })
 
   template.PM.forEach((slot) => {
-    const pid = pickFor(slot, input, actives, products)[0]
+    const pid = pickFor(slot, input, actives, products, 1, { usedProducts: usedInPM })[0]
+
+    if (pid) usedInPM.add(pid)
+
     const label =
       slot === "oil_cleanser"
         ? "Oil Cleanser (PM – removes makeup & sunscreen)"

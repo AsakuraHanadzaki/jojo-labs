@@ -118,3 +118,5 @@ export function HeaderWithSearch() {
     </>
   )
 }
+
+export default HeaderWithSearch

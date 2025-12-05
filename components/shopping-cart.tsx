@@ -89,10 +89,34 @@ export function useCart() {
 
   const { state, dispatch } = context
 
-  const addItem = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+  const addItem = async (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
     const { quantity = 1, ...rest } = item
-    for (let i = 0; i < quantity; i++) {
-      dispatch({ type: "ADD_ITEM", payload: rest })
+
+    try {
+      // Validate stock availability
+      const response = await fetch("/api/cart/validate-stock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: rest.id, quantity }),
+      })
+
+      const validation = await response.json()
+
+      if (!validation.available) {
+        alert(validation.message)
+        return false
+      }
+
+      // Add items one by one to maintain count
+      for (let i = 0; i < quantity; i++) {
+        dispatch({ type: "ADD_ITEM", payload: rest })
+      }
+
+      return true
+    } catch (error) {
+      console.error("Error adding item to cart:", error)
+      alert("Failed to add item to cart. Please try again.")
+      return false
     }
   }
 

@@ -72,6 +72,7 @@ export const translations = {
     "product.keybenefits": "Key Benefits",
     "product.keyingredients": "Key Ingredients",
     "product.addressesconcerns": "This product addresses these concerns",
+    "product.targetedconcerns": "Concerns", // Add targetedconcerns translation for English
 
     // About Page
     "about.title": "About JoJo Labs",
@@ -180,6 +181,11 @@ export const translations = {
     "routine.concern.aging": "Fine Lines & Wrinkles",
     "routine.concern.sensitivity": "Redness & Sensitivity",
     "routine.concern.uneven": "Uneven Tone",
+    "routine.step.label": "Step",
+    "routine.addtobasket": "Add to Basket ✨",
+    "routine.addalltobasket": "🛒 Add All Products to Basket",
+    "routine.title": "Find Your Perfect Routine",
+    "routine.error": "Error generating routine. Please try again.",
   },
   ru: {
     // Navigation
@@ -252,6 +258,7 @@ export const translations = {
     "product.keybenefits": "Основные преимущества",
     "product.keyingredients": "Ключевые ингредиенты",
     "product.addressesconcerns": "Этот продукт решает следующие проблемы",
+    "product.targetedconcerns": "помогает против", // Add targetedconcerns translation for Russian
 
     // About Page
     "about.title": "О JoJo Labs",
@@ -360,6 +367,11 @@ export const translations = {
     "routine.concern.aging": "Морщины",
     "routine.concern.sensitivity": "Чувствительность",
     "routine.concern.uneven": "Неровный тон",
+    "routine.step.label": "Этап",
+    "routine.addtobasket": "Добавить в корзину ✨",
+    "routine.addalltobasket": "🛒 Добавить все в корзину",
+    "routine.title": "Найдите свою идеальную рутину",
+    "routine.error": "Ошибка генерации рутины. Попробуйте еще раз.",
   },
   hy: {
     // Navigation
@@ -432,6 +444,7 @@ export const translations = {
     "product.keybenefits": "Հիմնական առավելություններ",
     "product.keyingredients": "Հիմնական բաղադրիչներ",
     "product.addressesconcerns": "Այս արտադրանքը լուծում է հետևյալ խնդիրները",
+    "product.targetedconcerns": "օգնում է դեմ", // Add targetedconcerns translation for Armenian
 
     // About Page
     "about.title": "JoJo Labs-ի մասին",
@@ -540,6 +553,11 @@ export const translations = {
     "routine.concern.aging": "Կնճիռներ",
     "routine.concern.sensitivity": "Զգայունություն",
     "routine.concern.uneven": "Անհավասար տոն",
+    "routine.step.label": "Քայլ",
+    "routine.addtobasket": "Ավելացնել զամբյուղ ✨",
+    "routine.addalltobasket": "🛒 Ավելացնել բոլորը զամբյուղ",
+    "routine.title": "Գտեք ձեր կատարյալ ռուտինան",
+    "routine.error": "Սխալ ռուտինայի ստեղծման ժամանակ։ Փորձեք կրկին։",
   },
 }
 

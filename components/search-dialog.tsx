@@ -1,14 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
-import { allProducts } from "@/lib/all-products" // Import allProducts
-
-// Convert allProducts object to an array for filtering
-const productsArray = Object.values(allProducts)
+import { fetchProducts } from "@/lib/products-service"
 
 interface SearchDialogProps {
   isOpen: boolean
@@ -17,11 +14,34 @@ interface SearchDialogProps {
 
 export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
   const [query, setQuery] = useState("")
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const filteredProducts = productsArray.filter(
+  useEffect(() => {
+    if (isOpen && products.length === 0) {
+      setLoading(true)
+      fetchProducts()
+        .then((data) => {
+          // Filter to only show in-stock products
+          const inStockProducts = data.filter((p: any) => p.in_stock === true && (p.stock === null || p.stock > 0))
+          setProducts(inStockProducts)
+        })
+        .catch((error) => {
+          console.error("Error fetching products for search:", error)
+        })
+        .finally(() => {
+          setLoading(false)
+        })
+    }
+  }, [isOpen, products.length])
+
+  const filteredProducts = products.filter(
     (product) =>
-      product.name.toLowerCase().includes(query.toLowerCase()) ||
-      product.category.toLowerCase().includes(query.toLowerCase()),
+      product.name?.toLowerCase().includes(query.toLowerCase()) ||
+      product.name_ru?.toLowerCase().includes(query.toLowerCase()) ||
+      product.name_hy?.toLowerCase().includes(query.toLowerCase()) ||
+      product.category?.toLowerCase().includes(query.toLowerCase()) ||
+      product.description?.toLowerCase().includes(query.toLowerCase()),
   )
 
   if (!isOpen) return null
@@ -56,7 +76,11 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
 
         {/* Search Results */}
         <div className="max-h-96 overflow-y-auto">
-          {query === "" ? (
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">
+              <p>Loading products...</p>
+            </div>
+          ) : query === "" ? (
             <div className="p-8 text-center text-gray-500">
               <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
               <p>Start typing to search products...</p>
@@ -77,7 +101,7 @@ export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
                   <div className="w-12 h-12 bg-gray-100 rounded-3xl overflow-hidden flex-shrink-0">
                     <Image
                       src={product.image || "/placeholder.svg"}
-                      alt={product.name}
+                      alt={product.name || "Product"}
                       width={48}
                       height={48}
                       className="w-full h-full object-cover"

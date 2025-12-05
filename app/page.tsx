@@ -7,16 +7,29 @@ import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
 import { HeaderWithSearch } from "@/components/header-with-search"
 import { useTranslation } from "@/hooks/use-translation"
-import { allProducts } from "@/lib/all-products"
+import { fetchProducts, getTranslatedField } from "@/lib/products-service"
+import type { Product } from "@/lib/supabase/types"
+import { useEffect, useState } from "react"
 
 export default function HomePage() {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const featuredProducts = [
-    allProducts["the-ordinary-niacinamide"],
-    allProducts["anua-heartleaf-pore-control-cleansing-oil"],
-    allProducts["dr-althea-345-relief-cream"],
-  ]
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const products = await fetchProducts()
+        const featured = products.slice(0, 3)
+        setFeaturedProducts(featured)
+      } catch (error) {
+        console.error("Error loading featured products:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadProducts()
+  }, [])
 
   return (
     <div className="min-h-screen bg-white">
@@ -30,27 +43,35 @@ export default function HomePage() {
 
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">{t("home.facecare")}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredProducts.map((product) => (
-              <Link key={product.id} href={`/products/${product.id}`} className="group">
-                <div className="bg-gradient-to-br from-rose-50 to-pink-100 rounded-3xl p-6 hover:shadow-lg transition-all duration-300">
-                  <div className="relative aspect-square mb-4 overflow-hidden rounded-2xl bg-white">
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      fill
-                      className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-                    />
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">{t("common.loading") || "Loading..."}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {featuredProducts.map((product) => (
+                <Link key={product.id} href={`/products/${product.id}`} className="group">
+                  <div className="bg-gradient-to-br from-rose-50 to-pink-100 rounded-3xl p-6 hover:shadow-lg transition-all duration-300">
+                    <div className="relative aspect-square mb-4 overflow-hidden rounded-2xl bg-white">
+                      <Image
+                        src={product.image || "/placeholder.svg"}
+                        alt={getTranslatedField(product, "name", language)}
+                        fill
+                        className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-rose-600 transition-colors">
+                      {getTranslatedField(product, "name", language)}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                      {getTranslatedField(product, "description", language)}
+                    </p>
+                    <p className="font-bold text-gray-900">{product.price}</p>
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-rose-600 transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
-                  <p className="font-bold text-gray-900">{product.price}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         <div className="text-center mb-16">

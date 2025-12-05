@@ -108,7 +108,7 @@ export function CartSidebar() {
           <div className="border-t p-6 space-y-4">
             <div className="flex justify-between items-center text-lg font-semibold">
               <span>Total:</span>
-              <span>₽{getTotalPrice().toLocaleString()}</span>
+              <span>AMD{getTotalPrice().toLocaleString()}</span>
             </div>
             <Link href="/checkout" onClick={() => dispatch({ type: "TOGGLE_CART" })}>
               <Button className="w-full bg-gray-900 hover:bg-gray-800">Proceed to Checkout</Button>

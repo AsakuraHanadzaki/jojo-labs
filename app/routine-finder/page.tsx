@@ -57,7 +57,11 @@ const FOLLOW_UPS: Record<string, FollowUpQuestion> = {
   },
 }
 
-const ROUTINE_MAP: Record<string, string> = { "1-3": "easy", "4-5": "intermediate", "6+": "advanced" }
+const ROUTINE_MAP: Record<string, string> = {
+  "1-3": "easy",
+  "4-5": "intermediate",
+  "6+": "advanced",
+}
 
 const SKIN_TYPES = [
   { value: "oily", labelKey: "routine.skintype.oily" },
@@ -112,7 +116,9 @@ export default function RoutineFinderPage() {
   const prevStep = () => setStep((s) => (s > 1 ? s - 1 : s))
 
   const toggleConcern = (c: string) => {
-    setConcerns((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : prev.length < 5 ? [...prev, c] : prev))
+    setConcerns((prev) =>
+      prev.includes(c) ? prev.filter((x) => x !== c) : prev.length < 5 ? [...prev, c] : prev,
+    )
   }
 
   const updateFollow = (qid: string, value: string) => {
@@ -132,7 +138,16 @@ export default function RoutineFinderPage() {
   const handleSubmit = async () => {
     const routine = ROUTINE_MAP[routineSteps] || "easy"
     const finalSkin = sensitive === "yes" ? "sensitive" : skinType
-    const body = { skinType: finalSkin, concerns: concerns.join(", "), age: "25", routine }
+
+    // NOTE: The backend routine-algorithm now uses key ingredients
+    // from each product (via product.ingredients) to pick products.
+    const body = {
+      skinType: finalSkin,
+      concerns: concerns.join(", "),
+      age: "25",
+      routine,
+    }
+
     try {
       setLoading(true)
       const res = await fetch("/api/routine", {
@@ -300,7 +315,9 @@ export default function RoutineFinderPage() {
                     <h3 className="text-xl font-bold mb-3 text-blue-900">{section.title}</h3>
                     <p className="text-gray-700 mb-4 leading-relaxed">{section.description}</p>
                     <div className="bg-white/60 rounded-xl p-4">
-                      <p className="text-sm font-semibold text-blue-800 mb-2">✨ Suggested Ingredients:</p>
+                      <p className="text-sm font-semibold text-blue-800 mb-2">
+                        {t("routine.ingredients")}
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         {section.ingredients.map((ingredient, idx) => (
                           <span
@@ -321,8 +338,8 @@ export default function RoutineFinderPage() {
                   <div className="bg-yellow-100 p-3 rounded-full">
                     <Sun className="w-6 h-6 text-yellow-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-yellow-900">Morning Routine</h3>
-                  <span className="text-yellow-600 text-sm">☀️ Start your day glowing!</span>
+                  <h3 className="text-2xl font-bold text-yellow-900">{t("routine.morning")}</h3>
+                  <span className="text-yellow-600 text-sm">{t("routine.morning.emoji")}</span>
                 </div>
                 <div className="space-y-4">
                   {result.AM.map((s, idx) => {
@@ -333,11 +350,13 @@ export default function RoutineFinderPage() {
                         className="bg-white/70 rounded-xl p-4 border border-yellow-100 hover:shadow-md transition-shadow"
                       >
                         <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0 bg-yellow-100 p-2 rounded-lg">{getStepIcon(s.step, true)}</div>
+                          <div className="flex-shrink-0 bg-yellow-100 p-2 rounded-lg">
+                            {getStepIcon(s.step, true)}
+                          </div>
                           <div className="flex-grow">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full text-xs font-bold">
-                                Step {idx + 1}
+                                {t("routine.step.label")} {idx + 1}
                               </span>
                               <h4 className="font-semibold text-gray-900">{s.step}</h4>
                             </div>
@@ -360,7 +379,9 @@ export default function RoutineFinderPage() {
                                     {p.name}
                                   </Link>
                                   {p.description && (
-                                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">{p.description}</p>
+                                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">
+                                      {p.description}
+                                    </p>
                                   )}
                                 </div>
                               </div>
@@ -379,8 +400,8 @@ export default function RoutineFinderPage() {
                   <div className="bg-indigo-100 p-3 rounded-full">
                     <Moon className="w-6 h-6 text-indigo-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-indigo-900">Evening Routine</h3>
-                  <span className="text-indigo-600 text-sm">🌙 Wind down & repair</span>
+                  <h3 className="text-2xl font-bold text-indigo-900">{t("routine.evening")}</h3>
+                  <span className="text-indigo-600 text-sm">{t("routine.evening.emoji")}</span>
                 </div>
                 <div className="space-y-4">
                   {result.PM.map((s, idx) => {
@@ -391,11 +412,13 @@ export default function RoutineFinderPage() {
                         className="bg-white/70 rounded-xl p-4 border border-indigo-100 hover:shadow-md transition-shadow"
                       >
                         <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0 bg-indigo-100 p-2 rounded-lg">{getStepIcon(s.step, false)}</div>
+                          <div className="flex-shrink-0 bg-indigo-100 p-2 rounded-lg">
+                            {getStepIcon(s.step, false)}
+                          </div>
                           <div className="flex-grow">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full text-xs font-bold">
-                                Step {idx + 1}
+                                {t("routine.step.label")} {idx + 1}
                               </span>
                               <h4 className="font-semibold text-gray-900">{s.step}</h4>
                             </div>
@@ -418,7 +441,9 @@ export default function RoutineFinderPage() {
                                     {p.name}
                                   </Link>
                                   {p.description && (
-                                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">{p.description}</p>
+                                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">
+                                      {p.description}
+                                    </p>
                                   )}
                                 </div>
                               </div>
@@ -438,7 +463,9 @@ export default function RoutineFinderPage() {
 
               {result.weekly && Object.keys(result.weekly).length > 0 && (
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
-                  <h3 className="text-xl font-bold mb-4 text-green-900 flex items-center gap-2">📅 Weekly Plan</h3>
+                  <h3 className="text-xl font-bold mb-4 text-green-900 flex items-center gap-2">
+                    {t("routine.weekly")}
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {Object.entries(result.weekly).map(([day, text]) => (
                       <div key={day} className="bg-white/60 rounded-lg p-3 border border-green-100">
@@ -456,7 +483,7 @@ export default function RoutineFinderPage() {
 
               <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl p-6 border border-rose-200">
                 <h3 className="text-xl font-bold mb-4 text-rose-900 flex items-center gap-2">
-                  🛍️ Your Curated Products
+                  {t("routine.products")}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                   {result.recommendedProducts &&
@@ -482,7 +509,9 @@ export default function RoutineFinderPage() {
                               <h4 className="font-semibold text-gray-900 mb-1">{p.name}</h4>
                               <p className="text-rose-600 font-bold">{p.price}</p>
                               {p.description && (
-                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{p.description}</p>
+                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                  {p.description}
+                                </p>
                               )}
                             </div>
                           </Link>
@@ -491,7 +520,7 @@ export default function RoutineFinderPage() {
                             size="sm"
                             className="w-full bg-rose-500 hover:bg-rose-600 text-white"
                           >
-                            Add to Basket ✨
+                            {t("routine.addtobasket")}
                           </Button>
                         </div>
                       )
@@ -502,7 +531,7 @@ export default function RoutineFinderPage() {
                   size="lg"
                   className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold py-3"
                 >
-                  🛒 Add All Products to Basket
+                  {t("routine.addalltobasket")}
                 </Button>
               </div>
             </CardContent>

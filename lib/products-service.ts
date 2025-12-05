@@ -11,7 +11,9 @@ export async function fetchProducts(category?: string): Promise<Product[]> {
     query = query.eq("category", category)
   }
 
-  const { data, error } = await query.order("in_stock", { ascending: false }).order("name")
+  query = query.eq("in_stock", true).gt("stock", 0)
+
+  const { data, error } = await query.order("stock", { ascending: false }).order("name")
 
   if (error) {
     console.error("Error fetching products:", error)
@@ -110,4 +112,50 @@ export function getStockStatus(product: Product): { label: string; color: string
     return { label: "Low Stock", color: "bg-amber-100 text-amber-800" }
   }
   return { label: "In Stock", color: "bg-green-100 text-green-800" }
+}
+
+export async function validateStock(
+  productId: string,
+  requestedQuantity: number,
+): Promise<{
+  available: boolean
+  maxQuantity: number
+  message: string
+}> {
+  const supabase = getSupabaseBrowserClient()
+
+  const { data, error } = await supabase.from("products").select("stock, in_stock").eq("id", productId).single()
+
+  if (error || !data) {
+    return {
+      available: false,
+      maxQuantity: 0,
+      message: "Product not found",
+    }
+  }
+
+  const currentStock = data.stock ?? 0
+  const inStock = data.in_stock ?? false
+
+  if (!inStock || currentStock <= 0) {
+    return {
+      available: false,
+      maxQuantity: 0,
+      message: "Product is out of stock",
+    }
+  }
+
+  if (requestedQuantity > currentStock) {
+    return {
+      available: false,
+      maxQuantity: currentStock,
+      message: `Only ${currentStock} units available`,
+    }
+  }
+
+  return {
+    available: true,
+    maxQuantity: currentStock,
+    message: "Stock available",
+  }
 }

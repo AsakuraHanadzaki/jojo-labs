@@ -64,7 +64,7 @@ export default function FaceCarePage() {
           // Fallback to hardcoded products
           console.log("[v0] Using fallback hardcoded products")
           const fallbackProducts = Object.values(allProducts)
-            .filter((p) => faceCareCategories.includes(p.category))
+            .filter((p) => faceCareCategories.includes(p.category) && p.inStock !== false)
             .map((p) => ({
               ...p,
               stock: 100,
@@ -75,9 +75,8 @@ export default function FaceCarePage() {
         }
       } catch (error) {
         console.error("[v0] Error loading products:", error)
-        // Fallback to hardcoded products
         const fallbackProducts = Object.values(allProducts)
-          .filter((p) => faceCareCategories.includes(p.category))
+          .filter((p) => faceCareCategories.includes(p.category) && p.inStock !== false)
           .map((p) => ({
             ...p,
             stock: 100,
