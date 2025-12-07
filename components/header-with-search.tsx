@@ -51,6 +51,9 @@ export function HeaderWithSearch() {
               >
                 {t("nav.routinefinder")}
               </Link>
+              <Link href="/blog" className="text-sm font-medium text-gray-900 hover:text-gray-600 transition-colors">
+                {t("nav.blog")}
+              </Link>
             </nav>
 
             <div className="flex items-center space-x-4">
@@ -107,6 +110,13 @@ export function HeaderWithSearch() {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {t("nav.routinefinder")}
+                </Link>
+                <Link
+                  href="/blog"
+                  className="text-sm font-medium text-gray-900 hover:text-gray-600 transition-colors px-4 py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {t("nav.blog")}
                 </Link>
               </nav>
             </div>

@@ -3,8 +3,6 @@ import type { RoutineInput, RoutineResult, ProductMap } from "@/lib/routine-algo
 import { buildRoutine } from "@/lib/routine-algorithm"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 
-// export const runtime = "edge"
-
 function normalize(input: any): RoutineInput {
   return {
     skinType: String(input?.skinType || ""),
@@ -31,21 +29,24 @@ export async function POST(req: Request) {
     let productsMap: ProductMap | undefined
     try {
       const supabase = await getSupabaseServerClient()
-      const { data: dbProducts } = await supabase.from("products").select("*").eq("in_stock", true)
+      const { data: dbProducts } = await supabase.from("products").select("*").eq("in_stock", true).gt("stock", 0)
 
       if (dbProducts && dbProducts.length > 0) {
-        // Convert array to map with id as key
         productsMap = dbProducts.reduce((acc, p) => {
           acc[p.id] = {
             id: p.id,
             name: p.name,
-            category: p.category_id,
+            category: p.category || p.category_id || "",
             price: p.price,
             image: p.image,
             description: p.description,
             brand: p.brand,
             size: p.size,
             rating: p.rating,
+            sub_category: p.sub_category,
+            key_ingredients: p.ingredients || [], // Use ingredients array as key_ingredients
+            concerns: p.concerns || [],
+            skin_type: p.skin_type || "",
           }
           return acc
         }, {} as ProductMap)

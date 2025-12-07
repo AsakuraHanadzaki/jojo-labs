@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Filter, X } from "lucide-react"
-import Image from "next/image"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/product-card"
 import { Footer } from "@/components/footer"
@@ -15,6 +15,9 @@ import { allProducts } from "@/lib/all-products"
 
 export default function FaceCarePage() {
   const { t, language } = useTranslation()
+  const searchParams = useSearchParams()
+  const concernParam = searchParams.get("concern")
+
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -58,7 +61,31 @@ export default function FaceCarePage() {
         if (dbProducts.length > 0) {
           const faceCareProducts = dbProducts.filter((p) => faceCareCategories.includes(p.category))
           console.log("[v0] Filtered face care products:", faceCareProducts.length)
-          const sortedProducts = sortProductsByStock(faceCareProducts)
+
+          let filteredByConcern = faceCareProducts
+          if (concernParam) {
+            filteredByConcern = faceCareProducts.filter((p) => {
+              if (!p.concerns || !Array.isArray(p.concerns)) return false
+
+              const concernMapping: Record<string, string[]> = {
+                hydration: ["dehydration", "hydration", "dryness"],
+                acne: ["acne", "pimples", "breakouts"],
+                aging: ["aging", "fine lines", "wrinkles", "anti-aging"],
+                pigmentation: ["pigmentation", "dark spots", "hyperpigmentation", "melasma"],
+                pores: ["pores", "blackheads", "enlarged pores"],
+                sensitivity: ["sensitivity", "redness", "irritation", "rosacea"],
+                texture: ["texture", "dullness", "uneven texture"],
+                dryness: ["dryness", "dry skin"],
+              }
+
+              const matchingConcerns = concernMapping[concernParam] || [concernParam]
+              return p.concerns.some((concern: string) =>
+                matchingConcerns.some((mc) => concern.toLowerCase().includes(mc.toLowerCase())),
+              )
+            })
+          }
+
+          const sortedProducts = sortProductsByStock(filteredByConcern)
           setProducts(sortedProducts)
         } else {
           // Fallback to hardcoded products
@@ -88,7 +115,7 @@ export default function FaceCarePage() {
       setLoading(false)
     }
     loadProducts()
-  }, [])
+  }, [concernParam])
 
   const sortProductsByStock = (products: Product[]) => {
     return [...products].sort((a, b) => {
@@ -144,20 +171,14 @@ export default function FaceCarePage() {
       <HeaderWithSearch />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="relative bg-gradient-to-br from-blue-50 to-indigo-100 rounded-3xl p-8 lg:p-12 mb-16 overflow-hidden">
-          <div className="absolute inset-0 opacity-30">
-            <Image
-              src="https://images.unsplash.com/photo-1586220742613-b731f66f7743?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-              alt="Face Care Hero Background"
-              fill
-              className="object-cover blur-sm scale-110"
-            />
+        {concernParam && (
+          <div className="mb-8 p-4 bg-rose-50 rounded-lg border border-rose-200">
+            <p className="text-center text-rose-800">
+              {t("facecare.filteredby") || "Showing products for"}:{" "}
+              <strong className="capitalize">{concernParam}</strong>
+            </p>
           </div>
-          <div className="relative z-10 text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">{t("facecare.title")}</h1>
-            <p className="text-lg text-gray-700 max-w-2xl mx-auto">{t("facecare.desc")}</p>
-          </div>
-        </div>
+        )}
 
         <div className="flex items-center justify-between mb-8">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

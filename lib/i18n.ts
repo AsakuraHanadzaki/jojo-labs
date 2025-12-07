@@ -7,6 +7,7 @@ export const translations = {
     "nav.about": "About",
     "nav.routinefinder": "Routine Finder",
     "nav.contact": "Contact",
+    "nav.blog": "Blog",
 
     // Home Page
     "home.hero.slide1.title": "Clear Skin Starts Here!",
@@ -24,6 +25,9 @@ export const translations = {
     "home.routinefinder": "Routine Finder",
     "home.routinefinder.desc": "Personalized skincare routine",
     "home.seeMoreProducts": "See More Products",
+    "home.concern.question": "What are you looking for today?",
+    "home.concern.prefix": "I'm looking for help with",
+    "home.concern.shopnow": "Shop Now",
 
     // Footer
     "footer.tagline": "Premium skincare and cosmetics for your natural beauty, from JoJo Labs.",
@@ -186,6 +190,16 @@ export const translations = {
     "routine.addalltobasket": "🛒 Add All Products to Basket",
     "routine.title": "Find Your Perfect Routine",
     "routine.error": "Error generating routine. Please try again.",
+
+    // Blog Page
+    "blog.title": "Blog",
+    "blog.subtitle": "Tips, news, and skincare insights",
+    "blog.readmore": "Read More",
+    "blog.publishedon": "Published on",
+    "blog.by": "by",
+    "blog.backtolist": "Back to Blog",
+    "blog.noposts": "No blog posts available yet.",
+    "blog.loading": "Loading blog posts...",
   },
   ru: {
     // Navigation
@@ -193,6 +207,7 @@ export const translations = {
     "nav.about": "О нас",
     "nav.routinefinder": "Подбор ухода",
     "nav.contact": "Контакты",
+    "nav.blog": "Блог",
 
     // Home Page
     "home.hero.slide1.title": "Чистая кожа начинается здесь!",
@@ -210,6 +225,9 @@ export const translations = {
     "home.routinefinder": "Подбор ухода",
     "home.routinefinder.desc": "Персонализированная процедура",
     "home.seeMoreProducts": "Показать больше товаров",
+    "home.concern.question": "Что вы ищете сегодня?",
+    "home.concern.prefix": "Мне нужна помощь с",
+    "home.concern.shopnow": "Купить сейчас",
 
     // Footer
     "footer.tagline": "Премиальный уход за кожей от JoJo Labs.",
@@ -372,6 +390,16 @@ export const translations = {
     "routine.addalltobasket": "🛒 Добавить все в корзину",
     "routine.title": "Найдите свою идеальную рутину",
     "routine.error": "Ошибка генерации рутины. Попробуйте еще раз.",
+
+    // Blog Page
+    "blog.title": "Блог",
+    "blog.subtitle": "Советы, новости и идеи по уходу за кожей",
+    "blog.readmore": "Читать далее",
+    "blog.publishedon": "Опубликовано",
+    "blog.by": "автор",
+    "blog.backtolist": "Вернуться к блогу",
+    "blog.noposts": "Пока нет статей в блоге.",
+    "blog.loading": "Загрузка статей...",
   },
   hy: {
     // Navigation
@@ -379,6 +407,7 @@ export const translations = {
     "nav.about": "Մեր մասին",
     "nav.routinefinder": "Խնամքի ընտրություն",
     "nav.contact": "Կապ",
+    "nav.blog": "Բլոգ",
 
     // Home Page
     "home.hero.slide1.title": "Մաքուր մաշկ սկսվում է այստեղ!",
@@ -396,6 +425,9 @@ export const translations = {
     "home.routinefinder": "Խնամքի ընտրություն",
     "home.routinefinder.desc": "Անհատական խնամք",
     "home.seeMoreProducts": "Տեսնել ավելի ապրանքներ",
+    "home.concern.question": "Ի՞նչ եք փնտրում այսօր",
+    "home.concern.prefix": "Ես օգնություն եմ փնտրում",
+    "home.concern.shopnow": "Գնել հիմա",
 
     // Footer
     "footer.tagline": "Պրեմիում մաշկի խնամք JoJo Labs-ից:",
@@ -558,6 +590,16 @@ export const translations = {
     "routine.addalltobasket": "🛒 Ավելացնել բոլորը զամբյուղ",
     "routine.title": "Գտեք ձեր կատարյալ ռուտինան",
     "routine.error": "Սխալ ռուտինայի ստեղծման ժամանակ։ Փորձեք կրկին։",
+
+    // Blog Page
+    "blog.title": "Բլոգ",
+    "blog.subtitle": "Խորհուրդներ, նորություններ և մաշկի խնամքի գաղափարներ",
+    "blog.readmore": "Կարդալ ավելին",
+    "blog.publishedon": "Հրապարակված",
+    "blog.by": "հեղինակ",
+    "blog.backtolist": "Վերադառնալ բլոգ",
+    "blog.noposts": "Դեռ բլոգի գրառումներ չկան։",
+    "blog.loading": "Բլոգի բեռնում...",
   },
 }
 

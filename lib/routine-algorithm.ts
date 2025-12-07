@@ -12,6 +12,10 @@ export type ProductMap = Record<
     brand?: string
     size?: string
     rating?: number
+    sub_category?: string
+    key_ingredients?: string[]
+    concerns?: string[]
+    skin_type?: string
   }
 >
 
@@ -78,10 +82,11 @@ const concernBuckets: Record<string, string[]> = {
   uneven: ["vitc", "niacinamide", "retinoid"],
 }
 
-// Infer actives from product name via keywords
-function activeFromName(name: string): string[] {
+function activeFromName(name: string, keyIngredients?: string[]): string[] {
   const n = name.toLowerCase()
   const flags: string[] = []
+
+  // Check product name
   if (/bha|salicylic/.test(n)) flags.push("BHA")
   if (/aha/.test(n)) flags.push("aha")
   if (/retin/.test(n)) flags.push("retinoid")
@@ -103,22 +108,64 @@ function activeFromName(name: string): string[] {
   if (/mugwort/.test(n)) flags.push("mugwort")
   if (/panthenol|bamboo/.test(n)) flags.push("panthenol")
   if (/heartleaf/.test(n)) flags.push("heartleaf")
+
+  if (keyIngredients && Array.isArray(keyIngredients)) {
+    keyIngredients.forEach((ingredient) => {
+      const ing = ingredient.toLowerCase()
+      if (/bha|salicylic/.test(ing)) flags.push("BHA")
+      if (/aha|glycolic|lactic|mandelic/.test(ing)) flags.push("aha")
+      if (/retin/.test(ing)) flags.push("retinoid")
+      if (/benzoyl/.test(ing)) flags.push("benzoyl_peroxide")
+      if (/niacinamide/.test(ing)) flags.push("niacinamide")
+      if (/azelaic/.test(ing)) flags.push("azelaic")
+      if (/green tea/.test(ing)) flags.push("green_tea")
+      if (/vitamin c|ascorbic/.test(ing)) flags.push("vitc")
+      if (/tranexamic/.test(ing)) flags.push("txa")
+      if (/arbutin/.test(ing)) flags.push("arbutin")
+      if (/ceramide/.test(ing)) flags.push("ceramides")
+      if (/squalane/.test(ing)) flags.push("squalane")
+      if (/snail/.test(ing)) flags.push("snail")
+      if (/beta-glucan|beta glucan/.test(ing)) flags.push("beta_glucan")
+      if (/hyaluronic|ha\b/.test(ing)) flags.push("ha")
+      if (/peptide/.test(ing)) flags.push("peptides")
+      if (/ginseng/.test(ing)) flags.push("ginseng")
+      if (/centella|cica/.test(ing)) flags.push("centella")
+      if (/mugwort/.test(ing)) flags.push("mugwort")
+      if (/panthenol/.test(ing)) flags.push("panthenol")
+      if (/heartleaf/.test(ing)) flags.push("heartleaf")
+    })
+  }
+
   return uniq(flags)
 }
 
-// Map category to slot
 type Role = "cleanse-1" | "cleanse-2" | "hydrate" | "treat" | "exfoliate" | "moisturize" | "mask" | "spf"
-function roleFromProduct(cat: string, name?: string): Role {
+function roleFromProduct(cat: string, name?: string, subCat?: string): Role {
   const c = (cat || "").toLowerCase()
   const n = (name || "").toLowerCase()
+  const s = (subCat || "").toLowerCase()
 
+  // Check sub-category first for more precise matching
+  if (s) {
+    if (/oil.*clean|hydrophilic/.test(s)) return "cleanse-1"
+    if (/sun|spf/.test(s)) return "spf"
+    if (/foam|gel.*clean/.test(s)) return "cleanse-2"
+    if (/toner|essence/.test(s)) return "hydrate"
+    if (/mask/.test(s)) return "mask"
+    if (/exfoliant|peel|pad/.test(s)) return "exfoliate"
+    if (/moisturizer|cream/.test(s)) return "moisturize"
+    if (/serum|treatment|ampoule/.test(s)) return "treat"
+  }
+
+  // Fall back to category and name matching
   if ((/oil/.test(c) && /clean/.test(c)) || (/oil/.test(n) && /clean/.test(n))) return "cleanse-1"
   if (/sun|spf/.test(c) || /spf|sunscreen/.test(n)) return "spf"
-  if (/cleanser|wash|foam/.test(c) || /cleanser|foam/.test(n)) return "cleanse-2"
-  if (/toner|essence|hydrate/.test(c) || /toner|essence/.test(n)) return "hydrate"
-  if (/mask/.test(c) || /mask/.test(n)) return "mask"
-  if (/exfol|pad/.test(c) || /exfol|pad/.test(n)) return "exfoliate"
-  if (/moist|cream|lotion/.test(c) || /cream|lotion|moistur/i.test(n)) return "moisturize"
+  if (/cleanser|cleansers|wash|foam/.test(c) || /cleanser|foam/.test(n)) return "cleanse-2"
+  if (/toner|toners|essence|essences|hydrate/.test(c) || /toner|essence/.test(n)) return "hydrate"
+  if (/mask|masks/.test(c) || /mask/.test(n)) return "mask"
+  if (/exfol|exfoliants|pad/.test(c) || /exfol|pad/.test(n)) return "exfoliate"
+  if (/moist|moisturizers|cream|creams|lotion/.test(c) || /cream|lotion|moistur/i.test(n)) return "moisturize"
+  if (/serum|serums|treatment|treatments/.test(c)) return "treat"
   return "treat"
 }
 
@@ -170,16 +217,64 @@ function planActives(input: RoutineInput): string[] {
 function scoreProduct(id: string, slot: string, user: RoutineInput, actives: string[], products: ProductMap): number {
   const p = products[id]
   if (!p) return 0
-  const acts = activeFromName(p.name)
+
+  const acts = activeFromName(p.name, p.key_ingredients)
   const roles = STEP_ROLES[slot] || []
-  const role = roleFromProduct(p.category, p.name)
-  const concernMatch = actives.length ? actives.filter((a) => acts.includes(a)).length / actives.length : 0
+  const role = roleFromProduct(p.category, p.name, p.sub_category)
+
+  // Concern matching: check if product targets user's concerns
+  const userConcerns = toTokens(user.concerns).map(normalizeConcern)
+  let concernMatch = 0
+  if (p.concerns && Array.isArray(p.concerns) && p.concerns.length > 0) {
+    const productConcerns = p.concerns.map((c: string) => normalizeConcern(c.toLowerCase()))
+    const matches = userConcerns.filter((uc) => productConcerns.includes(uc))
+    concernMatch = userConcerns.length > 0 ? matches.length / userConcerns.length : 0
+  } else {
+    // Fallback to ingredient-based matching if concerns not available
+    concernMatch = actives.length ? actives.filter((a) => acts.includes(a)).length / actives.length : 0
+  }
+
+  // Role fit: does product category match the slot requirement
   const roleFit = roles.includes(role) ? 1 : 0.25
+
+  // Skin type matching: does product suit user's skin type
+  let skinTypeMatch = 0.5 // neutral default
+  if (p.skin_type) {
+    const productSkinTypes = p.skin_type
+      .toLowerCase()
+      .split(/[,/]/)
+      .map((s) => s.trim())
+    if (productSkinTypes.includes("all") || productSkinTypes.includes("all skin types")) {
+      skinTypeMatch = 0.7 // good match for all skin types
+    } else if (productSkinTypes.includes(user.skinType.toLowerCase())) {
+      skinTypeMatch = 1.0 // perfect match
+    } else if (
+      (user.skinType === "combination" && (productSkinTypes.includes("oily") || productSkinTypes.includes("dry"))) ||
+      (user.skinType === "oily" && productSkinTypes.includes("combination"))
+    ) {
+      skinTypeMatch = 0.6 // partial match
+    } else {
+      skinTypeMatch = 0.2 // mismatch
+    }
+  }
+
+  // Preference-based scoring (lightweight/rich texture, etc.)
   const pref = SKIN_PREF[user.skinType] || { prefer: [], avoid: [] }
-  let skinFit = 0.5
-  if (pref.prefer.some((rx) => rx.test(p.name))) skinFit += 0.3
-  if (pref.avoid.some((rx) => rx.test(p.name))) skinFit -= 0.3
-  return 0.5 * concernMatch + 0.3 * roleFit + 0.2 * skinFit
+  let texturePreference = 0
+  if (pref.prefer.some((rx) => rx.test(p.name) || rx.test(p.sub_category || ""))) {
+    texturePreference += 0.3
+  }
+  if (pref.avoid.some((rx) => rx.test(p.name) || rx.test(p.sub_category || ""))) {
+    texturePreference -= 0.4
+  }
+
+  // Final weighted score
+  return (
+    0.35 * concernMatch + // 35% weight on concern matching
+    0.25 * roleFit + // 25% weight on category/role fit
+    0.25 * skinTypeMatch + // 25% weight on skin type matching
+    0.15 * texturePreference // 15% weight on texture preference
+  )
 }
 
 function pickFor(
@@ -196,7 +291,7 @@ function pickFor(
     if (opts?.usedProducts?.has(id)) return false
 
     const prod = products[id]
-    const role = roleFromProduct(prod.category, prod.name)
+    const role = roleFromProduct(prod.category, prod.name, prod.sub_category)
     if (!roles.includes(role)) return false
 
     if (opts?.excludeOil) {
@@ -209,27 +304,6 @@ function pickFor(
   const ranked = candidates.map((id) => ({ id, s: scoreProduct(id, slot, user, wanted, products) }))
   ranked.sort((a, b) => b.s - a.s)
   return Array.from(new Set(ranked.slice(0, limit).map((r) => r.id)))
-}
-
-function weeklyPlan(level: string, sensitive: boolean, hasRet: boolean, hasExf: boolean): Record<string, string> {
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-  const plan: Record<string, string> = {}
-  if (level === "easy") {
-    days.forEach((d) => (plan[d] = "PM: Barrier care (cleanse → moisturize)"))
-    if (hasExf) plan["Tue"] = "PM: Gentle exfoliant"
-    if (hasRet) plan["Thu"] = "PM: Retinoid"
-    return plan
-  }
-  days.forEach((d) => (plan[d] = "PM: Barrier care"))
-  if (hasExf) {
-    plan["Tue"] = "PM: Exfoliant"
-    plan["Sat"] = "PM: Exfoliant"
-  }
-  if (hasRet) {
-    plan["Thu"] = "PM: Retinoid"
-    plan["Sun"] = sensitive ? "PM: Bakuchiol/low-strength retinoid" : "PM: Retinoid"
-  }
-  return plan
 }
 
 const SKIN_ANALYSIS: Record<string, { desc: string; ingredients: string[] }> = {
@@ -292,6 +366,32 @@ const CONCERN_ANALYSIS: Record<string, { desc: string; ingredients: string[] }> 
     desc: "Uneven tone can be caused by sun damage or acne marks. Ingredients like vitamin C, niacinamide and retinoids help even skin tone.",
     ingredients: ["Vitamin C", "Niacinamide", "Retinoid"],
   },
+}
+
+function weeklyPlan(level: string, isSensitive: boolean, hasRet: boolean, hasExf: boolean): Record<string, string> {
+  const plan: Record<string, string> = {}
+
+  if (level === "advanced") {
+    plan["Exfoliant"] = "2–3 nights/week"
+    plan["Retinoid"] = "3–4 nights/week"
+    plan["Sleeping Pack"] = "1–2 times/week"
+  } else if (level === "intermediate") {
+    plan["Exfoliant"] = "1–2 nights/week"
+    plan["Retinoid"] = "2–3 nights/week"
+    plan["Sleeping Pack"] = "1 time/week"
+  } else if (level === "easy") {
+    plan["Exfoliant"] = "1 night/week"
+    plan["Retinoid"] = "1 night/week"
+    plan["Sleeping Pack"] = "1 time/week"
+  }
+
+  if (isSensitive) {
+    plan["Sunscreen"] = "Daily"
+  } else {
+    plan["Sunscreen"] = "Daily"
+  }
+
+  return plan
 }
 
 export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): RoutineResult {
@@ -367,7 +467,7 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
   const pickedActs = uniq(
     [...AM, ...PM].flatMap((s) => {
       const product = products[s.productId || ""]
-      return activeFromName(product?.name || "")
+      return activeFromName(product?.name || "", product?.key_ingredients)
     }),
   )
   const hasRet = pickedActs.includes("retinoid")

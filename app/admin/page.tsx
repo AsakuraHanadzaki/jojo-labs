@@ -33,8 +33,34 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  FileText,
+  Plus,
+  Edit,
+  EyeOff,
+  Trash2,
 } from "lucide-react"
 import type { Product, Order, CustomerRequest, ProductRating } from "@/lib/supabase/types"
+import Link from "next/link"
+
+interface Blog {
+  id: string
+  slug: string
+  title: string
+  title_ru?: string
+  title_hy?: string
+  excerpt: string
+  excerpt_ru?: string
+  excerpt_hy?: string
+  content: string
+  content_ru?: string
+  content_hy?: string
+  featured_image?: string
+  author: string
+  published: boolean
+  published_at?: string
+  created_at: string
+  updated_at: string
+}
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -47,12 +73,13 @@ export default function AdminPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [requests, setRequests] = useState<CustomerRequest[]>([])
   const [ratings, setRatings] = useState<ProductRating[]>([])
+  const [blogs, setBlogs] = useState<Blog[]>([])
 
-  // Filter states
+  // Filter and search states
+  const [searchTerm, setSearchTerm] = useState("")
   const [orderFilter, setOrderFilter] = useState("all")
   const [requestFilter, setRequestFilter] = useState("all")
   const [ratingFilter, setRatingFilter] = useState("all")
-  const [searchTerm, setSearchTerm] = useState("")
 
   const supabase = getSupabaseBrowserClient()
 
@@ -96,9 +123,11 @@ export default function AdminPage() {
 
   // Load all data
   const loadAllData = async () => {
-    setIsLoading(true)
-    await Promise.all([loadProducts(), loadOrders(), loadRequests(), loadRatings()])
-    setIsLoading(false)
+    loadProducts()
+    loadOrders()
+    loadRequests()
+    loadRatings()
+    loadBlogs()
   }
 
   const loadProducts = async () => {
@@ -202,6 +231,46 @@ export default function AdminPage() {
     setAdminCode("")
   }
 
+  // Load blogs
+  const loadBlogs = async () => {
+    try {
+      const { data, error } = await supabase.from("blogs").select("*").order("created_at", { ascending: false })
+      if (error) throw error
+      setBlogs(data || [])
+    } catch (error) {
+      console.error("Error loading blogs:", error)
+    }
+  }
+
+  // Toggle blog publish status
+  const toggleBlogPublish = async (blogId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("blogs")
+        .update({
+          published: !currentStatus,
+          published_at: !currentStatus ? new Date().toISOString() : null,
+        })
+        .eq("id", blogId)
+      if (error) throw error
+      loadBlogs()
+    } catch (error) {
+      console.error("Error updating blog:", error)
+    }
+  }
+
+  // Delete a blog post
+  const deleteBlog = async (blogId: string) => {
+    if (!confirm("Are you sure you want to delete this blog post?")) return
+    try {
+      const { error } = await supabase.from("blogs").delete().eq("id", blogId)
+      if (error) throw error
+      loadBlogs()
+    } catch (error) {
+      console.error("Error deleting blog:", error)
+    }
+  }
+
   // Status badge colors
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -273,7 +342,7 @@ export default function AdminPage() {
 
   // Admin dashboard
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -367,32 +436,32 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="stock" className="space-y-4">
+        <Tabs defaultValue="products" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="stock" className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              <span className="hidden sm:inline">Stock</span>
+            <TabsTrigger value="products">
+              <Package className="w-4 h-4 mr-2" />
+              Products
             </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4" />
-              <span className="hidden sm:inline">Orders</span>
+            <TabsTrigger value="orders">
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Orders
             </TabsTrigger>
-            <TabsTrigger value="requests" className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">Requests</span>
+            <TabsTrigger value="requests">
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Requests
             </TabsTrigger>
-            <TabsTrigger value="ratings" className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              <span className="hidden sm:inline">Ratings</span>
+            <TabsTrigger value="ratings">
+              <Star className="w-4 h-4 mr-2" />
+              Ratings
             </TabsTrigger>
-            <TabsTrigger value="delivery" className="flex items-center gap-2">
-              <Truck className="w-4 h-4" />
-              <span className="hidden sm:inline">Delivery</span>
+            <TabsTrigger value="blogs">
+              <FileText className="w-4 h-4 mr-2" />
+              Blogs
             </TabsTrigger>
           </TabsList>
 
           {/* Stock Management Tab */}
-          <TabsContent value="stock">
+          <TabsContent value="products">
             <Card>
               <CardHeader>
                 <CardTitle>Stock Management</CardTitle>
@@ -732,7 +801,7 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          {/* Delivery Tab */}
+          {/* Delivery Tab - This tab content was present but not linked in TabsList */}
           <TabsContent value="delivery">
             <Card>
               <CardHeader>
@@ -782,6 +851,65 @@ export default function AdminPage() {
                       ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Blogs Tab Content */}
+          <TabsContent value="blogs" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Blog Posts Management</span>
+                  <Link href="/admin/blog/new">
+                    <Button>
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Blog Post
+                    </Button>
+                  </Link>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {blogs.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No blog posts yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {blogs.map((blog) => (
+                      <div key={blog.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">{blog.title}</h3>
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-1">{blog.excerpt}</p>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                            <span>By {blog.author}</span>
+                            <span>•</span>
+                            <span>{new Date(blog.created_at).toLocaleDateString()}</span>
+                            <span>•</span>
+                            <span className={blog.published ? "text-green-600" : "text-gray-400"}>
+                              {blog.published ? "Published" : "Draft"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/admin/blog/${blog.id}`}>
+                            <Button variant="outline" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleBlogPublish(blog.id, blog.published)}
+                          >
+                            {blog.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => deleteBlog(blog.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

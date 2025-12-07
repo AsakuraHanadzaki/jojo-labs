@@ -6,6 +6,7 @@ import { Sparkles, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
 import { HeaderWithSearch } from "@/components/header-with-search"
+import { ConcernSelector } from "@/components/concern-selector"
 import { useTranslation } from "@/hooks/use-translation"
 import { fetchProducts, getTranslatedField } from "@/lib/products-service"
 import type { Product } from "@/lib/supabase/types"
@@ -36,10 +37,7 @@ export default function HomePage() {
       <HeaderWithSearch />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <section className="text-center mb-16">
-          <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">{t("home.hero.slide1.title")}</h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">{t("home.hero.slide1.desc")}</p>
-        </section>
+        <ConcernSelector />
 
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">{t("home.facecare")}</h2>
