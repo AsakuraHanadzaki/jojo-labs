@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Minus, Plus, Star, Leaf } from "lucide-react"
@@ -229,15 +229,10 @@ function findRelevantProducts(currentProduct: Product): any[] {
         score += 2
       }
 
-      const currentSkin =
-        currentProduct.skinType || currentProduct.skin_type || "All skin types"
+      const currentSkin = currentProduct.skinType || currentProduct.skin_type || "All skin types"
       const otherSkin = product.skinType || product.skin_type || "All skin types"
 
-      if (
-        otherSkin === currentSkin ||
-        otherSkin === "All skin types" ||
-        currentSkin === "All skin types"
-      ) {
+      if (otherSkin === currentSkin || otherSkin === "All skin types" || currentSkin === "All skin types") {
         score += 1
       }
 
@@ -332,91 +327,16 @@ function getTranslatedString(product: any, field: string, language: string): str
   return product[field] || ""
 }
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+// Client Component for interactivity
+const ProductPageClient = ({ product, productId }: { product: Product; productId: string }) => {
   const { t, language } = useTranslation()
   const { addItem, toggleCart } = useCart()
   const [quantity, setQuantity] = useState(1)
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
   const [stockStatus, setStockStatus] = useState<{ inStock: boolean; stock: number; lowStockThreshold: number }>({
-    inStock: true,
-    stock: 100,
+    inStock: product.in_stock ?? product.inStock ?? true,
+    stock: product.stock ?? 100,
     lowStockThreshold: 10,
   })
-
-  useEffect(() => {
-    async function fetchProduct() {
-      try {
-        const response = await fetch(`/api/products/${params.id}`)
-        if (response.ok) {
-          const data = await response.json()
-          setProduct(data)
-          setStockStatus({
-            inStock: data.in_stock ?? data.inStock ?? true,
-            stock: data.stock ?? 100,
-            lowStockThreshold: data.low_stock_threshold ?? 10,
-          })
-        } else {
-          const fallbackProduct = allProducts[params.id as keyof typeof allProducts] as Product | undefined
-          if (fallbackProduct) {
-            setProduct(fallbackProduct)
-            setStockStatus({
-              inStock: (fallbackProduct as any).inStock ?? true,
-              stock: 100,
-              lowStockThreshold: 10,
-            })
-          }
-        }
-      } catch (error) {
-        const fallbackProduct = allProducts[params.id as keyof typeof allProducts] as Product | undefined
-        if (fallbackProduct) {
-          setProduct(fallbackProduct)
-          setStockStatus({
-            inStock: (fallbackProduct as any).inStock ?? true,
-            stock: 100,
-            lowStockThreshold: 10,
-          })
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchProduct()
-  }, [params.id])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white">
-        <HeaderWithSearch />
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <p className="text-lg text-muted-foreground">{t("product.loading") || "Loading..."}</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    )
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white">
-        <HeaderWithSearch />
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-            <p className="text-lg text-muted-foreground">{t("product.notfound") || "Product not found"}</p>
-            <Link href="/face-care">
-              <Button variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t("nav.facecare") || "Back to Face Care"}
-              </Button>
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    )
-  }
 
   const productName = getTranslatedString(product, "name", language)
   const productDescription = getTranslatedString(product, "description", language)
@@ -425,12 +345,10 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
   const productIngredients = getTranslatedArray(product, "ingredients", language)
   const productSkinType =
-    getTranslatedString(product, "skinType", language) ||
-    getTranslatedString(product, "skin_type", language)
+    getTranslatedString(product, "skinType", language) || getTranslatedString(product, "skin_type", language)
 
   const productConcernsTranslated = getTranslatedArray(product, "concerns", language)
-  const concerns =
-    productConcernsTranslated.length > 0 ? productConcernsTranslated : inferConcerns(product)
+  const concerns = productConcernsTranslated.length > 0 ? productConcernsTranslated : inferConcerns(product)
 
   const isLowStock = stockStatus.stock > 0 && stockStatus.stock <= stockStatus.lowStockThreshold
   const isOutOfStock = !stockStatus.inStock || stockStatus.stock <= 0
@@ -528,9 +446,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                     <Star
                       key={i}
                       className={`w-4 h-4 ${
-                        i < Math.floor(product.rating || 4.5)
-                          ? "text-yellow-400 fill-yellow-400"
-                          : "text-gray-300"
+                        i < Math.floor(product.rating || 4.5) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
                       }`}
                     />
                   ))}
@@ -566,12 +482,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                   <Minus className="h-4 w-4" />
                 </Button>
                 <span className="w-12 text-center">{quantity}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setQuantity(quantity + 1)}
-                  disabled={isOutOfStock}
-                >
+                <Button variant="ghost" size="icon" onClick={() => setQuantity(quantity + 1)} disabled={isOutOfStock}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -649,11 +560,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
             <h3 className="text-xl font-semibold">{t("product.targetedconcerns") || "Targeted Skin Concerns"}</h3>
             <div className="flex flex-wrap gap-2">
               {concerns.map((concern, index) => (
-                <Badge
-                  key={index}
-                  variant="outline"
-                  className={`${badgeClassForConcern(concern)} border-rose-200`}
-                >
+                <Badge key={index} variant="outline" className={`${badgeClassForConcern(concern)} border-rose-200`}>
                   {concern}
                 </Badge>
               ))}
@@ -665,3 +572,5 @@ export default function ProductPage({ params }: { params: { id: string } }) {
     </div>
   )
 }
+
+export default ProductPageClient
