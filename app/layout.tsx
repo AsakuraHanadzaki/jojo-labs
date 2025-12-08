@@ -5,13 +5,14 @@ import "./globals.css"
 import { CartProvider } from "@/components/shopping-cart"
 import { CartSidebar } from "@/components/cart-sidebar"
 import { TranslationProvider } from "@/hooks/use-translation"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "JoJo Labs - Premium Skincare & Cosmetics",
   description: "Discover premium Armenian skincare and cosmetics for your natural beauty",
-    generator: 'v0.app'
+  generator: "v0.app",
 }
 
 export default function RootLayout({
@@ -26,6 +27,7 @@ export default function RootLayout({
           <CartProvider>
             {children}
             <CartSidebar />
+            <Toaster />
           </CartProvider>
         </TranslationProvider>
       </body>
