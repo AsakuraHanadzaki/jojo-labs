@@ -4,9 +4,12 @@ import { type NextRequest, NextResponse } from "next/server"
 // GET - Fetch products (with optional category filter)
 export async function GET(request: NextRequest) {
   try {
+    console.log("[v0] Products API: Starting fetch")
     const supabase = await getSupabaseServerClient()
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
+
+    console.log("[v0] Products API: Category filter =", category)
 
     let query = supabase.from("products").select("*").eq("in_stock", true)
 
@@ -16,11 +19,15 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await query.order("name")
 
-    if (error) throw error
+    if (error) {
+      console.error("[v0] Products API: Supabase error", error)
+      throw error
+    }
 
-    return NextResponse.json(data)
+    console.log("[v0] Products API: Successfully fetched", data?.length, "products")
+    return NextResponse.json(data || [])
   } catch (error) {
-    console.error("Error fetching products:", error)
-    return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 })
+    console.error("[v0] Products API: Fatal error", error)
+    return NextResponse.json({ error: "Failed to fetch products", details: String(error) }, { status: 500 })
   }
 }

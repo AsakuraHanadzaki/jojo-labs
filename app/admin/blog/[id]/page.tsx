@@ -34,10 +34,13 @@ export default function EditBlogPage() {
   })
 
   useEffect(() => {
-    if (params.id) {
+    if (params.id && params.id !== "[id]") {
       fetchBlog(params.id as string)
+    } else {
+      // Redirect to admin page if invalid ID
+      router.push("/admin")
     }
-  }, [params.id])
+  }, [params.id, router])
 
   const fetchBlog = async (id: string) => {
     try {

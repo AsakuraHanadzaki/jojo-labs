@@ -44,7 +44,7 @@ export async function POST(req: Request) {
             size: p.size,
             rating: p.rating,
             sub_category: p.sub_category,
-            key_ingredients: p.ingredients || [], // Use ingredients array as key_ingredients
+            key_ingredients: p.ingredients || [],
             concerns: p.concerns || [],
             skin_type: p.skin_type || "",
           }
@@ -52,8 +52,7 @@ export async function POST(req: Request) {
         }, {} as ProductMap)
       }
     } catch (dbError) {
-      console.error("Database error, falling back to hardcoded products:", dbError)
-      // Will use hardcoded products as fallback
+      console.log("Using fallback product data for routine")
     }
 
     const result: RoutineResult = buildRoutine(input, productsMap)

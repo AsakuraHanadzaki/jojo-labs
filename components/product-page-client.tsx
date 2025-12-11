@@ -99,22 +99,32 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
     setIsAddingToCart(true)
 
     try {
-      const response = await fetch("/api/cart/validate-stock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, quantity }),
-      })
+      let stockValidated = false
 
-      const validation = await response.json()
-
-      if (!validation.available) {
-        toast({
-          title: t("product.insufficientstock") || "Insufficient Stock",
-          description: validation.message,
-          variant: "destructive",
+      try {
+        const response = await fetch("/api/cart/validate-stock", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, quantity }),
         })
-        setIsAddingToCart(false)
-        return
+
+        if (response.ok) {
+          const validation = await response.json()
+          stockValidated = true
+
+          if (!validation.available) {
+            toast({
+              title: t("product.insufficientstock") || "Insufficient Stock",
+              description: validation.message,
+              variant: "destructive",
+            })
+            setIsAddingToCart(false)
+            return
+          }
+        }
+      } catch (fetchError) {
+        // Stock validation failed, continue anyway with warning
+        console.log("Stock validation unavailable, adding to cart anyway")
       }
 
       const success = await addItem(
@@ -136,7 +146,6 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
         setQuantity(1)
       }
     } catch (error) {
-      console.error("Error adding to cart:", error)
       toast({
         title: t("common.error") || "Error",
         description: t("product.addfailed") || "Failed to add item to cart. Please try again.",

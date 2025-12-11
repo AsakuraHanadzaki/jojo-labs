@@ -100,10 +100,22 @@ export function useCart() {
         body: JSON.stringify({ productId: rest.id, quantity }),
       })
 
+      if (!response.ok) {
+        console.warn("Stock validation API returned error, allowing add to cart anyway")
+        // If API fails, allow adding to cart (degraded experience rather than blocked)
+        for (let i = 0; i < quantity; i++) {
+          dispatch({ type: "ADD_ITEM", payload: rest })
+        }
+        return true
+      }
+
       const validation = await response.json()
 
       if (!validation.available) {
-        alert(validation.message)
+        // Show stock error message
+        if (typeof window !== "undefined") {
+          alert(validation.message || "This item is out of stock")
+        }
         return false
       }
 
@@ -115,8 +127,12 @@ export function useCart() {
       return true
     } catch (error) {
       console.error("Error adding item to cart:", error)
-      alert("Failed to add item to cart. Please try again.")
-      return false
+      // On network error, allow adding anyway (fallback behavior)
+      console.warn("Failed to validate stock, adding to cart anyway")
+      for (let i = 0; i < quantity; i++) {
+        dispatch({ type: "ADD_ITEM", payload: rest })
+      }
+      return true
     }
   }
 
