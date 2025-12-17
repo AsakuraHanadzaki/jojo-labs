@@ -24,6 +24,7 @@ export async function generateStaticParams() {
 }
 
 export const dynamicParams = true
+export const dynamic = "force-dynamic"
 
 async function fetchProduct(id: string) {
   try {
@@ -49,12 +50,13 @@ async function fetchProduct(id: string) {
   }
 }
 
-export default async function ProductPage({ params }: { params: { id: string } }) {
-  const product = await fetchProduct(params.id)
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const product = await fetchProduct(id)
 
   if (!product) {
     notFound()
   }
 
-  return <ProductPageClient product={product} productId={params.id} />
+  return <ProductPageClient product={product} productId={id} />
 }
