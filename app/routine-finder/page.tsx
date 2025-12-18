@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { useCart } from "@/components/shopping-cart"
@@ -64,10 +62,17 @@ const ROUTINE_MAP: Record<string, string> = {
 }
 
 const SKIN_TYPES = [
-  { value: "oily", labelKey: "routine.skintype.oily" },
-  { value: "dry", labelKey: "routine.skintype.dry" },
-  { value: "combination", labelKey: "routine.skintype.combination" },
-  { value: "normal", labelKey: "routine.skintype.normal" },
+  { key: "oily", labelKey: "routine.skintype.oily" },
+  { key: "dry", labelKey: "routine.skintype.dry" },
+  { key: "combination", labelKey: "routine.skintype.combination" },
+  { key: "normal", labelKey: "routine.skintype.normal" },
+]
+
+const TEXTURE_PREFS = [
+  { key: "smooth", labelKey: "routine.texture.smooth" },
+  { key: "matte", labelKey: "routine.texture.matte" },
+  { key: "oil-prone", labelKey: "routine.texture.oil-prone" },
+  { key: "combination", labelKey: "routine.texture.combination" },
 ]
 
 const getStepIcon = (stepName: string, isAM: boolean) => {
@@ -99,6 +104,7 @@ export default function RoutineFinderPage() {
   const [followUps, setFollowUps] = useState<Record<string, string | string[]>>({})
   const [result, setResult] = useState<RoutineResult | null>(null)
   const [loading, setLoading] = useState(false)
+  const [texture, setTexture] = useState("")
   const { dispatch } = useCart()
   const { t } = useTranslation()
 
@@ -110,15 +116,14 @@ export default function RoutineFinderPage() {
     setConcerns([])
     setFollowUps({})
     setResult(null)
+    setTexture("")
   }, [])
 
   const nextStep = () => setStep((s) => s + 1)
   const prevStep = () => setStep((s) => (s > 1 ? s - 1 : s))
 
   const toggleConcern = (c: string) => {
-    setConcerns((prev) =>
-      prev.includes(c) ? prev.filter((x) => x !== c) : prev.length < 5 ? [...prev, c] : prev,
-    )
+    setConcerns((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : prev.length < 5 ? [...prev, c] : prev))
   }
 
   const updateFollow = (qid: string, value: string) => {
@@ -146,6 +151,7 @@ export default function RoutineFinderPage() {
       concerns: concerns.join(", "),
       age: "25",
       routine,
+      texture,
     }
 
     try {
@@ -190,11 +196,9 @@ export default function RoutineFinderPage() {
       case 1:
         return !!skinType
       case 2:
-        return !!sensitive
-      case 3:
-        return !!routineSteps
-      case 4:
         return concerns.length > 0
+      case 3:
+        return !!texture
       default:
         return false
     }
@@ -204,338 +208,220 @@ export default function RoutineFinderPage() {
     <div className="min-h-screen flex flex-col">
       <HeaderWithSearch />
       <main className="flex-grow max-w-5xl mx-auto px-4 py-10">
-        <h1 className="text-4xl font-bold text-center mb-8">{t("routine.title")}</h1>
+        <h1 className="text-4xl sm:text-5xl font-bold text-center mb-8 sm:mb-10">{t("routine.title")}</h1>
         {!result ? (
-          <Card className="max-w-3xl mx-auto">
-            <CardHeader>
-              <CardTitle>
-                {t("routine.step")} {step} {t("routine.of")} 5
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <div className="max-w-3xl mx-auto bg-white/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-xl border border-rose-100">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center text-gray-900">
+              {t("routine.customizeyourroutine")}
+            </h2>
+            <div className="space-y-6 sm:space-y-8">
               {step === 1 && (
                 <>
-                  <p className="font-semibold">{t("routine.skintype")}</p>
-                  <RadioGroup value={skinType} onValueChange={setSkinType} className="space-y-2">
+                  <p className="font-semibold text-base sm:text-lg">{t("routine.skintype")}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                     {SKIN_TYPES.map((st) => (
-                      <div key={st.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={st.value} id={`sk-${st.value}`} />
-                        <Label htmlFor={`sk-${st.value}`} className="capitalize">
-                          {t(st.labelKey)}
-                        </Label>
-                      </div>
+                      <Button
+                        key={st.key}
+                        variant={skinType === st.key ? "default" : "outline"}
+                        className={`h-auto py-3 sm:py-4 text-xs sm:text-sm whitespace-normal ${
+                          skinType === st.key
+                            ? "bg-rose-500 hover:bg-rose-600 text-white"
+                            : "hover:bg-rose-50 hover:border-rose-300"
+                        }`}
+                        onClick={() => setSkinType(st.key)}
+                      >
+                        {t(st.labelKey)}
+                      </Button>
                     ))}
-                  </RadioGroup>
+                  </div>
                 </>
               )}
+
               {step === 2 && (
                 <>
-                  <p className="font-semibold">{t("routine.sensitive")}</p>
-                  <RadioGroup value={sensitive} onValueChange={setSensitive} className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="yes" id="s-yes" />
-                      <Label htmlFor="s-yes">{t("routine.sensitive.yes")}</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="no" id="s-no" />
-                      <Label htmlFor="s-no">{t("routine.sensitive.no")}</Label>
-                    </div>
-                  </RadioGroup>
-                </>
-              )}
-              {step === 3 && (
-                <>
-                  <p className="font-semibold">{t("routine.routinesteps")}</p>
-                  <RadioGroup value={routineSteps} onValueChange={setRoutineSteps} className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="1-3" id="r-13" />
-                      <Label htmlFor="r-13">{t("routine.routinesteps.short")}</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="4-5" id="r-45" />
-                      <Label htmlFor="r-45">{t("routine.routinesteps.medium")}</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="6+" id="r-6" />
-                      <Label htmlFor="r-6">{t("routine.routinesteps.long")}</Label>
-                    </div>
-                  </RadioGroup>
-                </>
-              )}
-              {step === 4 && (
-                <>
-                  <p className="font-semibold">{t("routine.concerns")}</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <p className="font-semibold text-base sm:text-lg">{t("routine.concerns")}</p>
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     {CONCERN_OPTIONS.map((c) => (
-                      <div key={c.key} className="flex items-center space-x-2">
+                      <div key={c.key} className="flex items-start space-x-2">
                         <Checkbox
                           id={`c-${c.key}`}
                           checked={concerns.includes(c.key)}
                           onCheckedChange={() => toggleConcern(c.key)}
+                          className="mt-0.5"
                         />
-                        <Label htmlFor={`c-${c.key}`}>{t(c.labelKey)}</Label>
+                        <Label htmlFor={`c-${c.key}`} className="text-sm sm:text-base leading-tight cursor-pointer">
+                          {t(c.labelKey)}
+                        </Label>
                       </div>
                     ))}
                   </div>
                 </>
               )}
-              <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={prevStep} disabled={step === 1}>
-                  {t("routine.back")}
-                </Button>
-                {step < 4 ? (
-                  <Button onClick={nextStep} disabled={!canProceed()}>
+
+              {step === 3 && (
+                <>
+                  <p className="font-semibold text-base sm:text-lg">{t("routine.preference")}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                    {TEXTURE_PREFS.map((tp) => (
+                      <Button
+                        key={tp.key}
+                        variant={texture === tp.key ? "default" : "outline"}
+                        className={`h-auto py-3 sm:py-4 text-xs sm:text-sm whitespace-normal ${
+                          texture === tp.key
+                            ? "bg-rose-500 hover:bg-rose-600 text-white"
+                            : "hover:bg-rose-50 hover:border-rose-300"
+                        }`}
+                        onClick={() => setTexture(tp.key)}
+                      >
+                        {t(tp.labelKey)}
+                      </Button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                {step > 1 && (
+                  <Button
+                    variant="outline"
+                    onClick={prevStep}
+                    className="flex-1 py-5 sm:py-6 text-sm sm:text-base bg-transparent"
+                  >
+                    {t("routine.previous")}
+                  </Button>
+                )}
+                {step < 3 ? (
+                  <Button
+                    onClick={nextStep}
+                    disabled={
+                      (step === 1 && !skinType) || (step === 2 && concerns.length === 0) || (step === 3 && !texture)
+                    }
+                    className="flex-1 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 py-5 sm:py-6 text-sm sm:text-base"
+                  >
                     {t("routine.next")}
                   </Button>
                 ) : (
-                  <Button onClick={handleSubmit} disabled={!canProceed() || loading}>
-                    {loading ? t("routine.generating") : t("routine.see")}
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={!skinType || concerns.length === 0 || !texture || loading}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 py-5 sm:py-6 text-sm sm:text-base"
+                  >
+                    {loading ? t("routine.generating") : t("routine.generate")}
                   </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ) : (
-          <Card id="results-section" className="max-w-4xl mx-auto">
-            <CardHeader>
-              <CardTitle>{t("routine.result")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border border-pink-100">
-                <p className="text-gray-800 text-lg leading-relaxed">{result.summary}</p>
-              </div>
-
-              {result.analysis &&
-                result.analysis.length > 0 &&
-                result.analysis.map((section) => (
-                  <div
-                    key={section.title}
-                    className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100"
-                  >
-                    <h3 className="text-xl font-bold mb-3 text-blue-900">{section.title}</h3>
-                    <p className="text-gray-700 mb-4 leading-relaxed">{section.description}</p>
-                    <div className="bg-white/60 rounded-xl p-4">
-                      <p className="text-sm font-semibold text-blue-800 mb-2">
-                        {t("routine.ingredients")}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {section.ingredients.map((ingredient, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-                          >
-                            {ingredient}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+          <div className="max-w-4xl mx-auto mt-8 sm:mt-12 space-y-6 sm:space-y-8">
+            {/* Morning Routine */}
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 sm:p-8 border border-amber-200">
+              <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900 flex items-center gap-2">
+                <span className="text-2xl sm:text-3xl">🌅</span>
+                {t("routine.morning")}
+              </h3>
+              <div className="space-y-3 sm:space-y-4">
+                {result.morning.map((step, idx) => (
+                  <div key={idx} className="flex items-start gap-3 sm:gap-4">
+                    <span className="bg-amber-200 text-amber-800 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-xs sm:text-sm">
+                      {idx + 1}
+                    </span>
+                    <p className="text-gray-700 pt-0.5 sm:pt-1 text-sm sm:text-base">{step.text}</p>
                   </div>
                 ))}
+              </div>
+            </div>
 
-              {/* Morning Routine */}
-              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="bg-yellow-100 p-3 rounded-full">
-                    <Sun className="w-6 h-6 text-yellow-600" />
+            {/* Evening Routine */}
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 sm:p-8 border border-indigo-200">
+              <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900 flex items-center gap-2">
+                <span className="text-2xl sm:text-3xl">🌙</span>
+                {t("routine.evening")}
+              </h3>
+              <div className="space-y-3 sm:space-y-4">
+                {result.evening.map((step, idx) => (
+                  <div key={idx} className="flex items-start gap-3 sm:gap-4">
+                    <span className="bg-indigo-200 text-indigo-800 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-xs sm:text-sm">
+                      {idx + 1}
+                    </span>
+                    <p className="text-gray-700 pt-0.5 sm:pt-1 text-sm sm:text-base">{step.text}</p>
                   </div>
-                  <h3 className="text-2xl font-bold text-yellow-900">{t("routine.morning")}</h3>
-                  <span className="text-yellow-600 text-sm">{t("routine.morning.emoji")}</span>
-                </div>
-                <div className="space-y-4">
-                  {result.AM.map((s, idx) => {
-                    const p = s.productId && allProducts[s.productId as keyof typeof allProducts]
-                    return (
-                      <div
-                        key={idx}
-                        className="bg-white/70 rounded-xl p-4 border border-yellow-100 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0 bg-yellow-100 p-2 rounded-lg">
-                            {getStepIcon(s.step, true)}
-                          </div>
-                          <div className="flex-grow">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full text-xs font-bold">
-                                {t("routine.step.label")} {idx + 1}
-                              </span>
-                              <h4 className="font-semibold text-gray-900">{s.step}</h4>
-                            </div>
-                            {p && (
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                  <Image
-                                    src={p.image || "/placeholder.jpg"}
-                                    alt={p.name}
-                                    width={48}
-                                    height={48}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-grow">
-                                  <Link
-                                    href={`/products/${p.id}`}
-                                    className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
-                                  >
-                                    {p.name}
-                                  </Link>
-                                  {p.description && (
-                                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                                      {p.description}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Weekly Plan */}
+            {result.weekly && Object.keys(result.weekly).length > 0 && (
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 sm:p-8 border border-green-200">
+                <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900">{t("routine.weekly")}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {Object.entries(result.weekly).map(([day, text]) => (
+                    <div key={day} className="bg-white/60 rounded-lg p-3 border border-green-100">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                        <span className="bg-green-200 text-green-800 px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap">
+                          {day}
+                        </span>
+                        <span className="text-gray-700 text-xs sm:text-sm">{text}</span>
                       </div>
-                    )
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Evening Routine */}
-              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-200">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="bg-indigo-100 p-3 rounded-full">
-                    <Moon className="w-6 h-6 text-indigo-600" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-indigo-900">{t("routine.evening")}</h3>
-                  <span className="text-indigo-600 text-sm">{t("routine.evening.emoji")}</span>
-                </div>
-                <div className="space-y-4">
-                  {result.PM.map((s, idx) => {
-                    const p = s.productId && allProducts[s.productId as keyof typeof allProducts]
+            {/* Recommended Products */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-rose-100">
+              <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900 text-center">
+                {t("routine.recommendedproducts")}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                {result.recommendedProducts &&
+                  result.recommendedProducts.map((pid) => {
+                    const p = allProducts[pid as keyof typeof allProducts]
+                    if (!p) return null
                     return (
                       <div
-                        key={idx}
-                        className="bg-white/70 rounded-xl p-4 border border-indigo-100 hover:shadow-md transition-shadow"
+                        key={pid}
+                        className="bg-white/70 rounded-xl p-4 border border-rose-100 hover:shadow-md transition-shadow"
                       >
-                        <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0 bg-indigo-100 p-2 rounded-lg">
-                            {getStepIcon(s.step, false)}
+                        <Link href={`/products/${p.id}`} className="flex gap-3 mb-3">
+                          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+                            <Image
+                              src={p.image || "/placeholder.jpg"}
+                              alt={p.name}
+                              width={64}
+                              height={64}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           <div className="flex-grow">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full text-xs font-bold">
-                                {t("routine.step.label")} {idx + 1}
-                              </span>
-                              <h4 className="font-semibold text-gray-900">{s.step}</h4>
-                            </div>
-                            {p && (
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                  <Image
-                                    src={p.image || "/placeholder.jpg"}
-                                    alt={p.name}
-                                    width={48}
-                                    height={48}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-grow">
-                                  <Link
-                                    href={`/products/${p.id}`}
-                                    className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
-                                  >
-                                    {p.name}
-                                  </Link>
-                                  {p.description && (
-                                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                                      {p.description}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            {s.note && (
-                              <p className="text-indigo-600 text-sm mt-2 italic bg-indigo-50 px-3 py-1 rounded-lg">
-                                💡 {s.note}
-                              </p>
+                            <h4 className="font-semibold text-gray-900 mb-1">{p.name}</h4>
+                            <p className="text-rose-600 font-bold">{p.price}</p>
+                            {p.description && (
+                              <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{p.description}</p>
                             )}
                           </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {result.weekly && Object.keys(result.weekly).length > 0 && (
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
-                  <h3 className="text-xl font-bold mb-4 text-green-900 flex items-center gap-2">
-                    {t("routine.weekly")}
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {Object.entries(result.weekly).map(([day, text]) => (
-                      <div key={day} className="bg-white/60 rounded-lg p-3 border border-green-100">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-green-200 text-green-800 px-2 py-1 rounded-full text-xs font-bold">
-                            {day}
-                          </span>
-                          <span className="text-gray-700 text-sm">{text}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl p-6 border border-rose-200">
-                <h3 className="text-xl font-bold mb-4 text-rose-900 flex items-center gap-2">
-                  {t("routine.products")}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                  {result.recommendedProducts &&
-                    result.recommendedProducts.map((pid) => {
-                      const p = allProducts[pid as keyof typeof allProducts]
-                      if (!p) return null
-                      return (
-                        <div
-                          key={pid}
-                          className="bg-white/70 rounded-xl p-4 border border-rose-100 hover:shadow-md transition-shadow"
+                        </Link>
+                        <Button
+                          onClick={() => addSingle(p.id)}
+                          size="sm"
+                          className="w-full bg-rose-500 hover:bg-rose-600 text-white"
                         >
-                          <Link href={`/products/${p.id}`} className="flex gap-3 mb-3">
-                            <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-                              <Image
-                                src={p.image || "/placeholder.jpg"}
-                                alt={p.name}
-                                width={64}
-                                height={64}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="flex-grow">
-                              <h4 className="font-semibold text-gray-900 mb-1">{p.name}</h4>
-                              <p className="text-rose-600 font-bold">{p.price}</p>
-                              {p.description && (
-                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                                  {p.description}
-                                </p>
-                              )}
-                            </div>
-                          </Link>
-                          <Button
-                            onClick={() => addSingle(p.id)}
-                            size="sm"
-                            className="w-full bg-rose-500 hover:bg-rose-600 text-white"
-                          >
-                            {t("routine.addtobasket")}
-                          </Button>
-                        </div>
-                      )
-                    })}
-                </div>
-                <Button
-                  onClick={addAll}
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold py-3"
-                >
-                  {t("routine.addalltobasket")}
-                </Button>
+                          {t("routine.addtobasket")}
+                        </Button>
+                      </div>
+                    )
+                  })}
               </div>
-            </CardContent>
-          </Card>
+              <Button
+                onClick={addAll}
+                size="lg"
+                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-semibold py-3"
+              >
+                {t("routine.addalltobasket")}
+              </Button>
+            </div>
+          </div>
         )}
       </main>
       <Footer />

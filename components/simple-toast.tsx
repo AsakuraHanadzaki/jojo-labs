@@ -7,37 +7,57 @@ interface Toast {
   id: string
   title?: string
   description?: string
+  variant?: "default" | "destructive"
 }
 
 interface ToastContextType {
-  toast: (props: { title?: string; description?: string }) => void
+  toast: (props: { title?: string; description?: string; variant?: "default" | "destructive" }) => void
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
 
+let globalToastFn:
+  | ((props: { title?: string; description?: string; variant?: "default" | "destructive" }) => void)
+  | null = null
+
+export function toast(props: { title?: string; description?: string; variant?: "default" | "destructive" }) {
+  if (globalToastFn) {
+    globalToastFn(props)
+  } else {
+    console.warn("Toast provider not initialized")
+  }
+}
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  const toast = useCallback((props: { title?: string; description?: string }) => {
-    const id = Math.random().toString(36).substring(7)
-    setToasts((prev) => [...prev, { id, ...props }])
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, 4000)
-  }, [])
+  const toastFn = useCallback(
+    (props: { title?: string; description?: string; variant?: "default" | "destructive" }) => {
+      const id = Math.random().toString(36).substring(7)
+      setToasts((prev) => [...prev, { id, ...props }])
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id))
+      }, 4000)
+    },
+    [],
+  )
+
+  globalToastFn = toastFn
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={{ toast: toastFn }}>
       {children}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 pr-10 relative animate-in slide-in-from-right"
+            className={`border rounded-lg shadow-lg p-4 pr-10 relative animate-in slide-in-from-right ${
+              t.variant === "destructive" ? "bg-red-50 border-red-200" : "bg-white border-gray-200"
+            }`}
           >
             <button
               onClick={() => removeToast(t.id)}
@@ -45,8 +65,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             >
               <X className="w-4 h-4" />
             </button>
-            {t.title && <div className="font-semibold text-gray-900 mb-1">{t.title}</div>}
-            {t.description && <div className="text-sm text-gray-600">{t.description}</div>}
+            {t.title && (
+              <div className={`font-semibold mb-1 ${t.variant === "destructive" ? "text-red-900" : "text-gray-900"}`}>
+                {t.title}
+              </div>
+            )}
+            {t.description && (
+              <div className={`text-sm ${t.variant === "destructive" ? "text-red-700" : "text-gray-600"}`}>
+                {t.description}
+              </div>
+            )}
           </div>
         ))}
       </div>

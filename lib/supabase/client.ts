@@ -9,3 +9,7 @@ export function getSupabaseBrowserClient() {
 
   return client
 }
+
+export function createClient() {
+  return getSupabaseBrowserClient()
+}

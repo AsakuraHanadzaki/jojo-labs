@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, CreditCard, Truck } from "lucide-react"
@@ -14,11 +14,42 @@ import { useCart } from "@/components/shopping-cart"
 import { HeaderWithSearch } from "@/components/header-with-search"
 import { Footer } from "@/components/footer"
 import { useTranslation } from "@/hooks/use-translation"
+import { useAuth } from "@/hooks/use-auth"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 export default function CheckoutPage() {
-  const { state } = useCart()
+  const { state, clearCart } = useCart()
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const router = useRouter()
+  const supabase = createClient()
   const [paymentMethod, setPaymentMethod] = useState("card")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+
+  useEffect(() => {
+    if (user) {
+      setEmail(user.email || "")
+      loadProfile()
+    }
+  }, [user])
+
+  const loadProfile = async () => {
+    if (!user) return
+    const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+    if (data) {
+      const fullName = data.full_name || ""
+      const nameParts = fullName.split(" ")
+      setFirstName(nameParts[0] || "")
+      setLastName(nameParts.slice(1).join(" ") || "")
+      setPhone(data.phone || "")
+    }
+  }
 
   const getTotalPrice = () => {
     return state.items.reduce((total, item) => {
@@ -34,6 +65,58 @@ export default function CheckoutPage() {
 
   const getFinalTotal = () => {
     return getTotalPrice() + getShippingCost()
+  }
+
+  const handleCompleteOrder = async () => {
+    setIsSubmitting(true)
+
+    try {
+      const total = getFinalTotal()
+
+      // Create order in Supabase
+      const { data: order, error } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user?.id || null,
+          customer_name: `${firstName} ${lastName}`.trim(),
+          customer_email: email,
+          customer_phone: phone,
+          total: total,
+          status: "pending",
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Create order items
+      if (order) {
+        const orderItems = state.items.map((item) => ({
+          order_id: order.id,
+          product_id: item.id,
+          quantity: item.quantity,
+          price: Number.parseFloat(item.price.replace("₽", "").replace(",", "")),
+        }))
+
+        await supabase.from("order_items").insert(orderItems)
+      }
+
+      // Clear cart
+      clearCart()
+
+      // Clear saved cart in database if logged in
+      if (user) {
+        await supabase.from("saved_carts").delete().eq("user_id", user.id)
+      }
+
+      // Redirect to success page
+      router.push("/checkout/success")
+    } catch (error) {
+      console.error("Error creating order:", error)
+      alert("Failed to complete order. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -66,20 +149,42 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">{t("checkout.firstname")}</Label>
-                    <Input id="firstName" placeholder={t("checkout.firstname.placeholder")} />
+                    <Input
+                      id="firstName"
+                      placeholder={t("checkout.firstname.placeholder")}
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">{t("checkout.lastname")}</Label>
-                    <Input id="lastName" placeholder={t("checkout.lastname.placeholder")} />
+                    <Input
+                      id="lastName"
+                      placeholder={t("checkout.lastname.placeholder")}
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">{t("checkout.email")}</Label>
-                  <Input id="email" type="email" placeholder={t("checkout.email.placeholder")} />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t("checkout.email.placeholder")}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">{t("checkout.phone")}</Label>
-                  <Input id="phone" type="tel" placeholder={t("checkout.phone.placeholder")} />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder={t("checkout.phone.placeholder")}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -220,7 +325,13 @@ export default function CheckoutPage() {
                   <span>₽{getFinalTotal().toLocaleString()}</span>
                 </div>
 
-                <Button className="w-full bg-gray-900 hover:bg-gray-800 mt-6">{t("checkout.complete")}</Button>
+                <Button
+                  className="w-full bg-gray-900 hover:bg-gray-800 mt-6"
+                  onClick={handleCompleteOrder}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Processing..." : t("checkout.complete")}
+                </Button>
 
                 <div className="text-center text-xs text-gray-500 mt-4">
                   <p>{t("checkout.terms")}</p>

@@ -170,22 +170,22 @@ export default function FaceCarePage() {
     <div className="min-h-screen bg-white">
       <HeaderWithSearch />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-8 sm:py-12">
         {concernParam && (
-          <div className="mb-8 p-4 bg-rose-50 rounded-lg border border-rose-200">
-            <p className="text-center text-rose-800">
+          <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-rose-50 rounded-lg border border-rose-200">
+            <p className="text-center text-sm sm:text-base text-rose-800">
               {t("facecare.filteredby") || "Showing products for"}:{" "}
               <strong className="capitalize">{concernParam}</strong>
             </p>
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="outline" className="flex items-center space-x-2 bg-transparent">
+            <SheetTrigger asChild className="md:hidden w-full sm:w-auto">
+              <Button variant="outline" className="flex items-center justify-center space-x-2 bg-transparent w-full">
                 <Filter className="w-4 h-4" />
-                <span>{t("facecare.filter")}</span>
+                <span className="text-sm">{t("facecare.filter")}</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 sm:w-80 bg-white p-0">
@@ -201,7 +201,7 @@ export default function FaceCarePage() {
                     key={cat.filter}
                     variant="ghost"
                     onClick={() => handleCategoryClick(cat.filter)}
-                    className={`justify-start ${
+                    className={`justify-start text-sm ${
                       selectedCategory === cat.filter ? "bg-rose-100 text-rose-800 hover:bg-rose-200" : ""
                     }`}
                   >
@@ -212,13 +212,13 @@ export default function FaceCarePage() {
             </SheetContent>
           </Sheet>
 
-          <div className="hidden md:flex flex-wrap gap-2 text-sm text-gray-600">
-            <span>{t("facecare.categories")}</span>
+          <div className="hidden md:flex flex-wrap gap-2 text-xs sm:text-sm text-gray-600">
+            <span className="py-1">{t("facecare.categories")}</span>
             {categories.map((cat) => (
               <button
                 key={cat.filter}
                 onClick={() => setSelectedCategory(cat.filter)}
-                className={`px-3 py-1 rounded-full transition-colors ${
+                className={`px-2 sm:px-3 py-1 rounded-full transition-colors whitespace-nowrap text-xs sm:text-sm ${
                   selectedCategory === cat.filter ? "bg-rose-100 text-rose-800" : "bg-gray-100 hover:bg-gray-200"
                 }`}
               >
@@ -226,21 +226,23 @@ export default function FaceCarePage() {
               </button>
             ))}
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-xs sm:text-sm text-gray-600 w-full sm:w-auto text-center sm:text-right">
             {filteredProducts.length} {t("facecare.products")}
           </p>
         </div>
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">Loading products...</p>
+            <p className="text-gray-500 text-sm sm:text-base">Loading products...</p>
           </div>
         ) : productsToDisplay.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No products found. Please run the database scripts to add products.</p>
+            <p className="text-gray-500 text-sm sm:text-base">
+              No products found. Please run the database scripts to add products.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {productsToDisplay.map((product) => (
               <ProductCard
                 key={product.id}

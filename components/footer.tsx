@@ -51,6 +51,11 @@ export function Footer() {
                   {t("nav.contact")}
                 </Link>
               </li>
+              <li>
+                <Link href="/privacy-policy" className="hover:text-gray-900">
+                  {t("footer.privacy")}
+                </Link>
+              </li>
             </ul>
           </div>
 

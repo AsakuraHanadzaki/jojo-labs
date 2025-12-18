@@ -8,6 +8,7 @@ export const translations = {
     "nav.routinefinder": "Routine Finder",
     "nav.contact": "Contact",
     "nav.blog": "Blog",
+    "nav.home": "Home", // Added privacy policy translations
 
     // Home Page
     "home.hero.slide1.title": "Clear Skin Starts Here!",
@@ -37,6 +38,7 @@ export const translations = {
     "footer.instagram": "Instagram",
     "footer.tiktok": "TikTok",
     "footer.copyright": "© 2025 JoJo Labs. All rights reserved.",
+    "footer.privacy": "Privacy Policy", // Added privacy policy translations
 
     // Face Care Page
     "facecare.title": "Face Care",
@@ -90,7 +92,7 @@ export const translations = {
     "about.story.p3": "JoJo Labs enhances your shopping experience with technology.",
     "about.delivery": "Home Delivery",
     "about.delivery.subtitle": "Fast & reliable delivery across Armenia",
-    "about.delivery.p1": "We've partnered with Glovo for delivery.",
+    "about.delivery.p1": "We've partnered with CDEK for delivery.",
     "about.delivery.p2": "Enjoy same-day delivery in major cities.",
     "about.delivery.info": "Delivery Information:",
     "about.delivery.yerevan": "Yerevan: Same-day delivery (1-2 hours)",
@@ -203,6 +205,45 @@ export const translations = {
     "blog.backtolist": "Back to Blog",
     "blog.noposts": "No blog posts available yet.",
     "blog.loading": "Loading blog posts...",
+
+    // Auth
+    "auth.login": "Log In",
+    "auth.signup": "Sign Up",
+    "auth.logout": "Log Out",
+    "auth.email": "Email",
+    "auth.password": "Password",
+    "auth.fullname": "Full Name",
+    "auth.phone": "Phone Number",
+    "auth.login.title": "Welcome Back",
+    "auth.login.subtitle": "Log in to your account",
+    "auth.signup.title": "Create Account",
+    "auth.signup.subtitle": "Sign up to start shopping",
+    "auth.signup.success": "Check your email to confirm your account",
+    "auth.noaccount": "Don't have an account?",
+    "auth.haveaccount": "Already have an account?",
+    "auth.error": "Authentication error",
+
+    // Profile
+    "profile.title": "My Profile",
+    "profile.account": "Account",
+    "profile.orders": "Orders",
+    "profile.cart": "Saved Cart",
+    "profile.wishlist": "Wishlist",
+    "profile.details": "Account Details",
+    "profile.edit": "Edit Profile",
+    "profile.save": "Save Changes",
+    "profile.noorders": "No orders yet",
+    "profile.nocart": "Your cart is empty",
+    "profile.nowishlist": "Your wishlist is empty",
+    "profile.order": "Order",
+    "profile.status": "Status",
+    "profile.total": "Total",
+    "profile.date": "Date",
+    "profile.viewdetails": "View Details",
+    "profile.removefromwishlist": "Remove from Wishlist",
+    "profile.addtocartfromwishlist": "Add to Cart",
+    "privacy.title": "Privacy Policy of JojoLabs.am", // Added privacy policy translations
+    "privacy.effectiveDate": "Effective Date: December 18, 2025", // Added privacy policy translations
   },
   ru: {
     // Navigation
@@ -211,6 +252,7 @@ export const translations = {
     "nav.routinefinder": "Подбор ухода",
     "nav.contact": "Контакты",
     "nav.blog": "Блог",
+    "nav.home": "Главная", // Added privacy policy translations
 
     // Home Page
     "home.hero.slide1.title": "Чистая кожа начинается здесь!",
@@ -240,6 +282,7 @@ export const translations = {
     "footer.instagram": "Инстаграм",
     "footer.tiktok": "ТикТок",
     "footer.copyright": "© 2025 JoJo Labs. Все права защищены.",
+    "footer.privacy": "Политика конфиденциальности", // Added privacy policy translations
 
     // Face Care Page
     "facecare.title": "Уход за лицом",
@@ -293,7 +336,7 @@ export const translations = {
     "about.story.p3": "JoJo Labs улучшает ваш опыт покупок.",
     "about.delivery": "Доставка на дом",
     "about.delivery.subtitle": "Быстрая доставка по Армении",
-    "about.delivery.p1": "Мы сотрудничаем с Glovo для доставки.",
+    "about.delivery.p1": "Мы сотрудничаем с CDEK для доставки.",
     "about.delivery.p2": "Наслаждайтесь доставкой в тот же день.",
     "about.delivery.info": "Информация о доставке:",
     "about.delivery.yerevan": "Ереван: Доставка в тот же день (1-2 часа)",
@@ -396,16 +439,8 @@ export const translations = {
     "routine.addalltobasket": "🛒 Добавить все в корзину",
     "routine.title": "Найдите свою идеальную рутину",
     "routine.error": "Ошибка генерации рутины. Попробуйте еще раз.",
-
-    // Blog Page
-    "blog.title": "Блог",
-    "blog.subtitle": "Советы, новости и идеи по уходу за кожей",
-    "blog.readmore": "Читать далее",
-    "blog.publishedon": "Опубликовано",
-    "blog.by": "автор",
-    "blog.backtolist": "Вернуться к блогу",
-    "blog.noposts": "Пока нет статей в блоге.",
-    "blog.loading": "Загрузка статей...",
+    "privacy.title": "Политика конфиденциальности JojoLabs.am", // Added privacy policy translations
+    "privacy.effectiveDate": "Дата вступления в силу: 18 декабря 2025 г.", // Added privacy policy translations
   },
   hy: {
     // Navigation
@@ -414,6 +449,7 @@ export const translations = {
     "nav.routinefinder": "Խնամքի ընտրություն",
     "nav.contact": "Կապ",
     "nav.blog": "Բլոգ",
+    "nav.home": "Գլխավոր", // Added privacy policy translations
 
     // Home Page
     "home.hero.slide1.title": "Մաքուր մաշկ սկսվում է այստեղ!",
@@ -443,6 +479,7 @@ export const translations = {
     "footer.instagram": "Instagram",
     "footer.tiktok": "TikTok",
     "footer.copyright": "© 2025 JoJo Labs. Բոլոր իրավունքները պաշտպանված են:",
+    "footer.privacy": "Գաղտնիության քաղաքականություն", // Added privacy policy translations
 
     // Face Care Page
     "facecare.title": "Դեմքի խնամք",
@@ -496,7 +533,7 @@ export const translations = {
     "about.story.p3": "JoJo Labs-ը բարելավում է ձեր գնումների փորձը:",
     "about.delivery": "Տան առաքում",
     "about.delivery.subtitle": "Արագ առաքում Հայաստանում",
-    "about.delivery.p1": "Մենք համագործակցում ենք Glovo-ի հետ:",
+    "about.delivery.p1": "Մենք համագործակցում ենք CDEK-ի հետ:",
     "about.delivery.p2": "Վայելեք նույն օրվա առաքումը:",
     "about.delivery.info": "Առաքման տեղեկություններ:",
     "about.delivery.yerevan": "Երևան: Նույն օրվա առաքում (1-2 ժամ)",
@@ -599,16 +636,8 @@ export const translations = {
     "routine.addalltobasket": "🛒 Ավելացնել բոլորը զամբյուղ",
     "routine.title": "Գտեք ձեր կատարյալ ռուտինան",
     "routine.error": "Սխալ ռուտինայի ստեղծման ժամանակ։ Փորձեք կրկին։",
-
-    // Blog Page
-    "blog.title": "Բլոգ",
-    "blog.subtitle": "Խորհուրդներ, նորություններ և մաշկի խնամքի գաղափարներ",
-    "blog.readmore": "Կարդալ ավելին",
-    "blog.publishedon": "Հրապարակված",
-    "blog.by": "հեղինակ",
-    "blog.backtolist": "Վերադառնալ բլոգ",
-    "blog.noposts": "Դեռ բլոգի գրառումներ չկան։",
-    "blog.loading": "Բլոգի բեռնում...",
+    "privacy.title": "JojoLabs.am-ի գաղտնիության քաղաքականություն", // Added privacy policy translations
+    "privacy.effectiveDate": "Ուժի մեջ մտնելու ամսաթիվ՝ Դեկտեմբեր 18, 2025", // Added privacy policy translations
   },
 }
 

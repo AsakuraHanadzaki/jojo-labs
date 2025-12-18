@@ -6,6 +6,7 @@ import { CartProvider } from "@/components/shopping-cart"
 import { CartSidebar } from "@/components/cart-sidebar"
 import { TranslationProvider } from "@/hooks/use-translation"
 import { ToastProvider } from "@/components/simple-toast"
+import { AuthProvider } from "@/hooks/use-auth"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,10 +26,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <TranslationProvider>
           <ToastProvider>
-            <CartProvider>
-              {children}
-              <CartSidebar />
-            </CartProvider>
+            <AuthProvider>
+              <CartProvider>
+                {children}
+                <CartSidebar />
+              </CartProvider>
+            </AuthProvider>
           </ToastProvider>
         </TranslationProvider>
       </body>

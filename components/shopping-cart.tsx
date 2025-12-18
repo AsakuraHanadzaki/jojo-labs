@@ -2,7 +2,9 @@
 
 import type React from "react"
 
-import { createContext, useContext, useReducer, type ReactNode } from "react"
+import { createContext, useContext, useReducer, useEffect, type ReactNode } from "react"
+import { useAuth } from "@/hooks/use-auth"
+import { createClient } from "@/lib/supabase/client"
 
 interface CartItem {
   id: string
@@ -77,6 +79,162 @@ export function CartProvider({ children }: { children: ReactNode }) {
     items: [],
     isOpen: false,
   })
+  const { user } = useAuth()
+  const supabase = createClient()
+
+  useEffect(() => {
+    const savedCart = localStorage.getItem("cart")
+    if (savedCart) {
+      try {
+        const items = JSON.parse(savedCart)
+        items.forEach((item: CartItem) => {
+          dispatch({ type: "ADD_ITEM", payload: item })
+        })
+      } catch (error) {
+        console.error("Error loading cart from localStorage:", error)
+      }
+    }
+
+    // If user is logged in, load saved cart from Supabase
+    if (user) {
+      loadSavedCart()
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (state.items.length > 0) {
+      localStorage.setItem("cart", JSON.stringify(state.items))
+    } else {
+      localStorage.removeItem("cart")
+    }
+
+    // If user is logged in, sync cart to Supabase
+    if (user && state.items.length > 0) {
+      saveSavedCart()
+    }
+  }, [state.items, user])
+
+  const loadSavedCart = async () => {
+    if (!user) return
+
+    try {
+      const { data } = await supabase
+        .from("saved_carts")
+        .select("product_id, quantity, products(id, name, price, image)")
+        .eq("user_id", user.id)
+
+      if (data && data.length > 0) {
+        // Merge saved cart with current cart
+        data.forEach((item: any) => {
+          if (item.products) {
+            dispatch({
+              type: "ADD_ITEM",
+              payload: {
+                id: item.products.id,
+                name: item.products.name,
+                price: item.products.price,
+                image: item.products.image,
+              },
+            })
+            // Update quantity if more than 1
+            if (item.quantity > 1) {
+              dispatch({
+                type: "UPDATE_QUANTITY",
+                payload: { id: item.products.id, quantity: item.quantity },
+              })
+            }
+          }
+        })
+      }
+    } catch (error) {
+      console.error("Error loading saved cart:", error)
+    }
+  }
+
+  const saveSavedCart = async () => {
+    if (!user) return
+
+    try {
+      // Delete existing saved cart items
+      await supabase.from("saved_carts").delete().eq("user_id", user.id)
+
+      // Insert current cart items
+      const cartItems = state.items.map((item) => ({
+        user_id: user.id,
+        product_id: item.id,
+        quantity: item.quantity,
+      }))
+
+      if (cartItems.length > 0) {
+        await supabase.from("saved_carts").insert(cartItems)
+      }
+    } catch (error) {
+      console.error("Error saving cart:", error)
+    }
+  }
+
+  const addItem = async (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+    const { quantity = 1, ...rest } = item
+
+    try {
+      // Validate stock availability
+      const response = await fetch("/api/cart/validate-stock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: rest.id, quantity }),
+      })
+
+      if (!response.ok) {
+        console.warn("Stock validation API returned error, allowing add to cart anyway")
+        // If API fails, allow adding to cart (degraded experience rather than blocked)
+        for (let i = 0; i < quantity; i++) {
+          dispatch({ type: "ADD_ITEM", payload: rest })
+        }
+        return true
+      }
+
+      const validation = await response.json()
+
+      if (!validation.available) {
+        // Show stock error message
+        if (typeof window !== "undefined") {
+          alert(validation.message || "This item is out of stock")
+        }
+        return false
+      }
+
+      // Add items one by one to maintain count
+      for (let i = 0; i < quantity; i++) {
+        dispatch({ type: "ADD_ITEM", payload: rest })
+      }
+
+      return true
+    } catch (error) {
+      console.error("Error adding item to cart:", error)
+      // On network error, allow adding anyway (fallback behavior)
+      console.warn("Failed to validate stock, adding to cart anyway")
+      for (let i = 0; i < quantity; i++) {
+        dispatch({ type: "ADD_ITEM", payload: rest })
+      }
+      return true
+    }
+  }
+
+  const removeItem = (id: string) => {
+    dispatch({ type: "REMOVE_ITEM", payload: id })
+  }
+
+  const updateQuantity = (id: string, quantity: number) => {
+    dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } })
+  }
+
+  const toggleCart = () => {
+    dispatch({ type: "TOGGLE_CART" })
+  }
+
+  const clearCart = () => {
+    dispatch({ type: "CLEAR_CART" })
+  }
 
   return <CartContext.Provider value={{ state, dispatch }}>{children}</CartContext.Provider>
 }

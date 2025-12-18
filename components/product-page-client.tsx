@@ -11,6 +11,7 @@ import { ChevronLeft, Minus, Plus, ShoppingCart, Star } from "lucide-react"
 import { useCart } from "@/components/shopping-cart"
 import { useTranslation } from "@/hooks/use-translation"
 import { useToast } from "@/hooks/use-toast"
+import { WishlistButton } from "@/components/wishlist-button"
 import HeaderWithSearch from "@/components/header-with-search"
 import Footer from "@/components/footer"
 
@@ -172,7 +173,7 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white rounded-3xl p-8 shadow-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 bg-white rounded-3xl p-4 sm:p-8 shadow-lg">
             {/* Product Image */}
             <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-rose-50 to-pink-50">
               <Image src={product.image || "/placeholder.svg"} alt={productName} fill className="object-contain p-8" />
@@ -190,12 +191,16 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
                   {t("product.instock") || "In Stock"}
                 </SimpleBadge>
               )}
+              {/* Wishlist button to top-left corner */}
+              <div className="absolute top-4 left-4">
+                <WishlistButton productId={productId} productName={productName} />
+              </div>
             </div>
 
             {/* Product Info */}
-            <div className="space-y-6">
+            <div className="space-y-4 lg:space-y-6">
               <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-4">{productName}</h1>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{productName}</h1>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
@@ -211,55 +216,60 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
                     ({product.reviews || 0} {t("product.reviews") || "reviews"})
                   </span>
                 </div>
-                <p className="text-gray-600 text-lg leading-relaxed mb-4">{productDescription}</p>
+                <p className="text-gray-600 text-base lg:text-lg leading-relaxed mb-4">{productDescription}</p>
               </div>
 
               <div className="flex items-center gap-4">
-                <span className="text-3xl font-bold text-rose-600">{product.price}</span>
+                <span className="text-2xl sm:text-3xl font-bold text-rose-600">{product.price}</span>
               </div>
 
-              {/* Quantity Selector */}
-              <div className="flex items-center gap-4">
-                <span className="text-gray-700 font-medium">{t("product.quantity") || "Quantity"}:</span>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                <span className="text-gray-700 font-medium text-sm sm:text-base">
+                  {t("product.quantity") || "Quantity"}:
+                </span>
                 <div className="flex items-center border border-gray-300 rounded-lg">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={isOutOfStock}
+                    className="h-9 w-9 p-0"
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
-                  <span className="px-4 py-2 min-w-[3rem] text-center font-medium">{quantity}</span>
+                  <span className="px-3 py-2 min-w-[2.5rem] text-center font-medium text-sm">{quantity}</span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setQuantity(Math.min(stockStatus.stock, quantity + 1))}
                     disabled={isOutOfStock || quantity >= stockStatus.stock}
+                    className="h-9 w-9 p-0"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
                 {stockStatus.stock > 0 && (
-                  <span className="text-sm text-gray-500">
+                  <span className="text-xs sm:text-sm text-gray-500">
                     {stockStatus.stock} {t("product.available") || "available"}
                   </span>
                 )}
               </div>
 
-              {/* Add to Cart Button */}
-              <Button
-                onClick={handleAddToCart}
-                disabled={isOutOfStock || isAddingToCart}
-                className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white py-6 rounded-xl text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                {isAddingToCart
-                  ? t("product.adding") || "Adding..."
-                  : isOutOfStock
-                    ? t("product.outofstock") || "Out of Stock"
-                    : t("product.addtocart") || "Add to Cart"}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <WishlistButton productId={productId} productName={productName} />
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={isOutOfStock || isAddingToCart}
+                  className="flex-1 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white py-4 sm:py-6 rounded-xl text-base sm:text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  {isAddingToCart
+                    ? t("product.adding") || "Adding..."
+                    : isOutOfStock
+                      ? t("product.outofstock") || "Out of Stock"
+                      : t("product.addtocart") || "Add to Cart"}
+                </Button>
+              </div>
 
               {isOutOfStock && (
                 <p className="text-sm text-red-600 text-center">
@@ -270,13 +280,21 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
           </div>
 
           {/* Product Details Tabs */}
-          <div className="mt-12 bg-white rounded-3xl p-8 shadow-lg">
+          <div className="mt-8 lg:mt-12 bg-white rounded-3xl p-4 sm:p-8 shadow-lg">
             <Tabs defaultValue="benefits" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-8">
-                <TabsTrigger value="benefits">{t("product.benefits") || "Benefits"}</TabsTrigger>
-                <TabsTrigger value="how-to-use">{t("product.howtouse") || "How to Use"}</TabsTrigger>
-                <TabsTrigger value="ingredients">{t("product.ingredients") || "Ingredients"}</TabsTrigger>
-                <TabsTrigger value="concerns">{t("product.targetedconcerns") || "Concerns"}</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 mb-6 sm:mb-8 h-auto">
+                <TabsTrigger value="benefits" className="text-xs sm:text-sm py-2 px-2 sm:px-3 whitespace-nowrap">
+                  {t("product.benefits") || "Benefits"}
+                </TabsTrigger>
+                <TabsTrigger value="how-to-use" className="text-xs sm:text-sm py-2 px-2 sm:px-3 whitespace-nowrap">
+                  {t("product.howtouse") || "How to Use"}
+                </TabsTrigger>
+                <TabsTrigger value="ingredients" className="text-xs sm:text-sm py-2 px-2 sm:px-3 whitespace-nowrap">
+                  {t("product.ingredients") || "Ingredients"}
+                </TabsTrigger>
+                <TabsTrigger value="concerns" className="text-xs sm:text-sm py-2 px-2 sm:px-3 whitespace-nowrap">
+                  {t("product.targetedconcerns") || "Concerns"}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="benefits" className="space-y-4 pt-6">
