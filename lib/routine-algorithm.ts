@@ -373,7 +373,7 @@ const CONCERN_ANALYSIS: Record<string, { descKey: string; ingredients: string[] 
   },
   pigment: {
     descKey: "routine.analysis.concern.pigment.desc",
-    ingredients: ["ingredient.vitamin_c", "ingredient.niacinamide", "ingredient.tranexamic_acid"],,
+    ingredients: ["ingredient.vitamin_c", "ingredient.niacinamide", "ingredient.tranexamic_acid"],
   },
   pores: {
     descKey: "routine.analysis.concern.pores.desc",
@@ -555,25 +555,6 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
   })
 
   const recommendedProductIds = uniq([...AM, ...PM].map((s) => s.productId || "").filter(Boolean) as string[])
-  const recommendedProducts = recommendedProductIds
-    .map((id) => products[id])
-    .filter(Boolean)
-    .map((product) => ({
-      id: product.id,
-      name: product.name,
-      category: product.category,
-      price: product.price,
-      image: product.image,
-      description: product.description,
-      brand: product.brand,
-      size: product.size,
-      rating: product.rating,
-      sub_category: product.sub_category,
-      key_ingredients: product.key_ingredients,
-      concerns: product.concerns,
-      skin_type: product.skin_type,
-    }))
-    
   const recommendedProducts = recommendedProductIds
     .map((id) => products[id])
     .filter(Boolean)

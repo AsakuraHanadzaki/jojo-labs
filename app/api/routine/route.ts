@@ -43,6 +43,19 @@ const getTranslatedArray = (product: Record<string, unknown>, field: "skin_type"
   return ((product[field] as string[]) || []).join(", ")
 }
 
+const normalizeStringArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean)
+  }
+  if (typeof value === "string") {
+    return value
+      .split(/[,/]+/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
+  return []
+}
+
 export async function POST(req: Request) {
   try {
     const ct = req.headers.get("content-type") || ""
@@ -77,8 +90,8 @@ export async function POST(req: Request) {
             size: p.size,
             rating: p.rating,
             sub_category: p.sub_category,
-            key_ingredients: p.ingredients || [],
-            concerns: p.concerns || [],
+            key_ingredients: normalizeStringArray(p.ingredients),
+            concerns: normalizeStringArray(p.concerns),
             skin_type: getTranslatedArray(p, "skin_type", input.language || "en"),
           }
           return acc
