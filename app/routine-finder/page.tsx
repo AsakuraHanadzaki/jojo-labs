@@ -159,12 +159,15 @@ export default function RoutineFinderPage() {
       if (contentType.includes("application/json")) {
         const data = await res.json()
         if (!res.ok) {
-          throw new Error(data?.error || "Request failed")
+          throw new Error(data?.detail || data?.error || "Request failed")
         }
         setResult(data as RoutineResult)
       } else {
         const text = await res.text()
-        throw new Error(text || "Request failed")
+        if (!res.ok) {
+          throw new Error(text || res.statusText || "Request failed")
+        }
+        throw new Error(text || "Unexpected response")
       }
       setTimeout(() => {
         document.getElementById("results-section")?.scrollIntoView({ behavior: "smooth", block: "start" })
