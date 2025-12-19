@@ -115,6 +115,17 @@ export async function POST(req: Request) {
     }
 
     const result: RoutineResult = buildRoutine(input, productsMap)
+    if (productsMap) {
+      result.recommendedProducts = result.recommendedProducts.map((product) => {
+        const translated = productsMap?.[product.id]
+        if (!translated) return product
+        return {
+          ...product,
+          name: translated.name || product.name,
+          description: translated.description || product.description,
+        }
+      })
+    }
 
     console.log(`[v0] Routine generated successfully:`)
     console.log(`[v0]   - AM steps: ${result.AM.length}`)
