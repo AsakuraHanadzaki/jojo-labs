@@ -147,20 +147,24 @@ function roleFromProduct(cat: string, name?: string, subCat?: string): Role {
 
   // Check sub-category first for more precise matching
   if (s) {
-    if (/oil.*clean|hydrophilic/.test(s)) return "cleanse-1"
+    if (/oil.*clean|hydrophilic|cleansing.*oil/.test(s)) return "cleanse-1"
     if (/sun|spf/.test(s)) return "spf"
-    if (/foam|gel.*clean/.test(s)) return "cleanse-2"
+    if (/foam|cleansing.*foam|gel.*clean|cleansing.*gel/.test(s)) return "cleanse-2"
     if (/toner|essence/.test(s)) return "hydrate"
     if (/mask/.test(s)) return "mask"
     if (/exfoliant|peel|pad/.test(s)) return "exfoliate"
-    if (/moisturizer|cream/.test(s)) return "moisturize"
+    if (/moisturizer|cream|moisturiz/.test(s)) return "moisturize"
     if (/serum|treatment|ampoule/.test(s)) return "treat"
   }
 
   // Fall back to category and name matching
   if ((/oil/.test(c) && /clean/.test(c)) || (/oil/.test(n) && /clean/.test(n))) return "cleanse-1"
   if (/sun|spf/.test(c) || /spf|sunscreen/.test(n)) return "spf"
-  if (/cleanser|cleansers|wash|foam/.test(c) || /cleanser|foam/.test(n)) return "cleanse-2"
+  if (
+    /cleanser|cleansers|wash|cleansing.*foam|cleansing.*gel|foam.*clean/.test(c) ||
+    /cleanser|foam|cleansing.*foam|cleansing.*gel|foam.*clean/.test(n)
+  )
+    return "cleanse-2"
   if (/toner|toners|essence|essences|hydrate/.test(c) || /toner|essence/.test(n)) return "hydrate"
   if (/mask|masks/.test(c) || /mask/.test(n)) return "mask"
   if (/exfol|exfoliants|pad/.test(c) || /exfol|pad/.test(n)) return "exfoliate"
@@ -222,43 +226,47 @@ function scoreProduct(id: string, slot: string, user: RoutineInput, actives: str
   const roles = STEP_ROLES[slot] || []
   const role = roleFromProduct(p.category, p.name, p.sub_category)
 
-  // Concern matching: check if product targets user's concerns
+  console.log(`[v0] Scoring product ${id} (${p.name}) for slot ${slot}`)
+  console.log(`[v0]   - Role: ${role}, Expected: ${roles.join(",")}`)
+  console.log(`[v0]   - Concerns: ${p.concerns?.join(",")}`)
+  console.log(`[v0]   - Skin type: ${p.skin_type}`)
+  console.log(`[v0]   - Key ingredients: ${p.key_ingredients?.join(",")}`)
+
   const userConcerns = toTokens(user.concerns).map(normalizeConcern)
   let concernMatch = 0
   if (p.concerns && Array.isArray(p.concerns) && p.concerns.length > 0) {
     const productConcerns = p.concerns.map((c: string) => normalizeConcern(c.toLowerCase()))
     const matches = userConcerns.filter((uc) => productConcerns.includes(uc))
     concernMatch = userConcerns.length > 0 ? matches.length / userConcerns.length : 0
+    console.log(`[v0]   - Concern match: ${concernMatch.toFixed(2)} (${matches.length}/${userConcerns.length})`)
   } else {
-    // Fallback to ingredient-based matching if concerns not available
     concernMatch = actives.length ? actives.filter((a) => acts.includes(a)).length / actives.length : 0
+    console.log(`[v0]   - Concern match (fallback): ${concernMatch.toFixed(2)}`)
   }
 
-  // Role fit: does product category match the slot requirement
   const roleFit = roles.includes(role) ? 1 : 0.25
 
-  // Skin type matching: does product suit user's skin type
-  let skinTypeMatch = 0.5 // neutral default
+  let skinTypeMatch = 0.5
   if (p.skin_type) {
     const productSkinTypes = p.skin_type
       .toLowerCase()
       .split(/[,/]/)
       .map((s) => s.trim())
     if (productSkinTypes.includes("all") || productSkinTypes.includes("all skin types")) {
-      skinTypeMatch = 0.7 // good match for all skin types
+      skinTypeMatch = 0.7
     } else if (productSkinTypes.includes(user.skinType.toLowerCase())) {
-      skinTypeMatch = 1.0 // perfect match
+      skinTypeMatch = 1.0
     } else if (
       (user.skinType === "combination" && (productSkinTypes.includes("oily") || productSkinTypes.includes("dry"))) ||
       (user.skinType === "oily" && productSkinTypes.includes("combination"))
     ) {
-      skinTypeMatch = 0.6 // partial match
+      skinTypeMatch = 0.6
     } else {
-      skinTypeMatch = 0.2 // mismatch
+      skinTypeMatch = 0.2
     }
+    console.log(`[v0]   - Skin type match: ${skinTypeMatch.toFixed(2)}`)
   }
 
-  // Preference-based scoring (lightweight/rich texture, etc.)
   const pref = SKIN_PREF[user.skinType] || { prefer: [], avoid: [] }
   let texturePreference = 0
   if (pref.prefer.some((rx) => rx.test(p.name) || rx.test(p.sub_category || ""))) {
@@ -268,13 +276,13 @@ function scoreProduct(id: string, slot: string, user: RoutineInput, actives: str
     texturePreference -= 0.4
   }
 
-  // Final weighted score
-  return (
-    0.35 * concernMatch + // 35% weight on concern matching
-    0.25 * roleFit + // 25% weight on category/role fit
-    0.25 * skinTypeMatch + // 25% weight on skin type matching
-    0.15 * texturePreference // 15% weight on texture preference
+  const finalScore = 0.35 * concernMatch + 0.25 * roleFit + 0.25 * skinTypeMatch + 0.15 * texturePreference
+
+  console.log(
+    `[v0]   - Final score: ${finalScore.toFixed(3)} (concern:${(0.35 * concernMatch).toFixed(2)} role:${(0.25 * roleFit).toFixed(2)} skin:${(0.25 * skinTypeMatch).toFixed(2)} texture:${(0.15 * texturePreference).toFixed(2)})`,
   )
+
+  return finalScore
 }
 
 function pickFor(
@@ -286,6 +294,8 @@ function pickFor(
   opts?: { excludeOil?: boolean; usedProducts?: Set<string> },
 ): string[] {
   const roles = STEP_ROLES[slot] || []
+
+  console.log(`[v0] Picking products for slot: ${slot}, roles: ${roles.join(",")}`)
 
   const candidates = Object.keys(products).filter((id) => {
     if (opts?.usedProducts?.has(id)) return false
@@ -301,9 +311,15 @@ function pickFor(
     return true
   })
 
+  console.log(`[v0] Found ${candidates.length} candidates for slot ${slot}`)
+
   const ranked = candidates.map((id) => ({ id, s: scoreProduct(id, slot, user, wanted, products) }))
   ranked.sort((a, b) => b.s - a.s)
-  return Array.from(new Set(ranked.slice(0, limit).map((r) => r.id)))
+
+  const selected = Array.from(new Set(ranked.slice(0, limit).map((r) => r.id)))
+  console.log(`[v0] Selected products: ${selected.join(", ")}`)
+
+  return selected
 }
 
 const SKIN_ANALYSIS: Record<string, { desc: string; ingredients: string[] }> = {
@@ -396,6 +412,12 @@ function weeklyPlan(level: string, isSensitive: boolean, hasRet: boolean, hasExf
 
 export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): RoutineResult {
   const products: ProductMap = productsMap || (allProducts as unknown as ProductMap)
+
+  console.log(`[v0] Building routine for:`)
+  console.log(`[v0]   - Skin type: ${input.skinType}`)
+  console.log(`[v0]   - Concerns: ${input.concerns}`)
+  console.log(`[v0]   - Routine level: ${input.routine}`)
+  console.log(`[v0]   - Total products available: ${Object.keys(products).length}`)
 
   const level = (input.routine || "easy").toLowerCase().replace("basic", "easy")
   const actives = planActives(input)

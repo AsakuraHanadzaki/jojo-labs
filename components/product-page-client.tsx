@@ -161,9 +161,9 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
     <>
       <HeaderWithSearch />
       <main className="min-h-screen bg-gradient-to-b from-rose-50 to-white">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
           {/* Breadcrumb */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <Link
               href="/face-care"
               className="inline-flex items-center text-sm text-gray-600 hover:text-rose-600 transition-colors"
@@ -173,94 +173,105 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white rounded-3xl p-8 shadow-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-lg">
             {/* Product Image */}
-            <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-rose-50 to-pink-50">
-              <Image src={product.image || "/placeholder.svg"} alt={productName} fill className="object-contain p-8" />
+            <div className="relative aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-br from-rose-50 to-pink-50">
+              <Image
+                src={product.image || "/placeholder.svg"}
+                alt={productName}
+                fill
+                className="object-contain p-4 sm:p-8"
+              />
               {/* Stock Badge */}
               {isOutOfStock ? (
-                <SimpleBadge className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white">
+                <SimpleBadge className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-red-500 hover:bg-red-600 text-white text-xs">
                   {t("product.outofstock") || "Out of Stock"}
                 </SimpleBadge>
               ) : isLowStock ? (
-                <SimpleBadge className="absolute top-4 right-4 bg-amber-500 hover:bg-amber-600 text-white">
+                <SimpleBadge className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-amber-500 hover:bg-amber-600 text-white text-xs">
                   {t("product.lowstock") || "Low Stock"}
                 </SimpleBadge>
               ) : (
-                <SimpleBadge className="absolute top-4 right-4 bg-green-500 hover:bg-green-600 text-white">
+                <SimpleBadge className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-green-500 hover:bg-green-600 text-white text-xs">
                   {t("product.instock") || "In Stock"}
                 </SimpleBadge>
               )}
               {/* Wishlist button to top-left corner */}
-              <div className="absolute top-4 left-4">
+              <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
                 <WishlistButton productId={productId} productName={productName} />
               </div>
             </div>
 
             {/* Product Info */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-4">{productName}</h1>
-                <div className="flex items-center gap-2 mb-4">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">{productName}</h1>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${
+                        className={`w-3 h-3 sm:w-4 sm:h-4 ${
                           i < Math.floor(product.rating || 4.5) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
                         }`}
                       />
                     ))}
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs sm:text-sm text-muted-foreground">
                     ({product.reviews || 0} {t("product.reviews") || "reviews"})
                   </span>
                 </div>
-                <p className="text-gray-600 text-lg leading-relaxed mb-4">{productDescription}</p>
+                <p className="text-gray-600 text-base sm:text-lg leading-relaxed mb-3 sm:mb-4">{productDescription}</p>
               </div>
 
               <div className="flex items-center gap-4">
-                <span className="text-3xl font-bold text-rose-600">{product.price}</span>
+                <span className="text-2xl sm:text-3xl font-bold text-rose-600">{product.price}</span>
               </div>
 
               {/* Quantity Selector */}
-              <div className="flex items-center gap-4">
-                <span className="text-gray-700 font-medium">{t("product.quantity") || "Quantity"}:</span>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                <span className="text-gray-700 font-medium text-sm sm:text-base">
+                  {t("product.quantity") || "Quantity"}:
+                </span>
                 <div className="flex items-center border border-gray-300 rounded-lg">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={isOutOfStock}
+                    className="h-9 w-9 p-0"
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
-                  <span className="px-4 py-2 min-w-[3rem] text-center font-medium">{quantity}</span>
+                  <span className="px-3 sm:px-4 py-2 min-w-[2.5rem] sm:min-w-[3rem] text-center font-medium text-sm sm:text-base">
+                    {quantity}
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setQuantity(Math.min(stockStatus.stock, quantity + 1))}
                     disabled={isOutOfStock || quantity >= stockStatus.stock}
+                    className="h-9 w-9 p-0"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                 </div>
                 {stockStatus.stock > 0 && (
-                  <span className="text-sm text-gray-500">
+                  <span className="text-xs sm:text-sm text-gray-500">
                     {stockStatus.stock} {t("product.available") || "available"}
                   </span>
                 )}
               </div>
 
               {/* Wishlist and Cart buttons in a flex container */}
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <WishlistButton productId={productId} productName={productName} />
                 <Button
                   onClick={handleAddToCart}
                   disabled={isOutOfStock || isAddingToCart}
-                  className="flex-1 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white py-6 rounded-xl text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white py-4 sm:py-6 rounded-xl text-base sm:text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   {isAddingToCart
                     ? t("product.adding") || "Adding..."
                     : isOutOfStock
@@ -270,7 +281,7 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
               </div>
 
               {isOutOfStock && (
-                <p className="text-sm text-red-600 text-center">
+                <p className="text-xs sm:text-sm text-red-600 text-center">
                   {t("product.unavailable") || "This product is currently unavailable"}
                 </p>
               )}
@@ -278,75 +289,97 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
           </div>
 
           {/* Product Details Tabs */}
-          <div className="mt-12 bg-white rounded-3xl p-8 shadow-lg">
+          <div className="mt-6 sm:mt-12 bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-lg">
             <Tabs defaultValue="benefits" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-8">
-                <TabsTrigger value="benefits">{t("product.benefits") || "Benefits"}</TabsTrigger>
-                <TabsTrigger value="how-to-use">{t("product.howtouse") || "How to Use"}</TabsTrigger>
-                <TabsTrigger value="ingredients">{t("product.ingredients") || "Ingredients"}</TabsTrigger>
-                <TabsTrigger value="concerns">{t("product.targetedconcerns") || "Concerns"}</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1 sm:gap-2 mb-4 sm:mb-8">
+                <TabsTrigger value="benefits" className="text-xs sm:text-sm">
+                  {t("product.benefits") || "Benefits"}
+                </TabsTrigger>
+                <TabsTrigger value="how-to-use" className="text-xs sm:text-sm">
+                  {t("product.howtouse") || "How to Use"}
+                </TabsTrigger>
+                <TabsTrigger value="ingredients" className="text-xs sm:text-sm">
+                  {t("product.ingredients") || "Ingredients"}
+                </TabsTrigger>
+                <TabsTrigger value="concerns" className="text-xs sm:text-sm">
+                  {t("product.targetedconcerns") || "Concerns"}
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="benefits" className="space-y-4 pt-6">
-                <h3 className="text-xl font-semibold">{t("product.keybenefits") || "Key Benefits"}</h3>
+              <TabsContent value="benefits" className="space-y-3 sm:space-y-4 pt-4 sm:pt-6">
+                <h3 className="text-lg sm:text-xl font-semibold">{t("product.keybenefits") || "Key Benefits"}</h3>
                 {productBenefits.length > 0 ? (
                   <ul className="space-y-2">
                     {productBenefits.map((benefit, index) => (
                       <li key={index} className="flex items-start">
                         <span className="text-rose-500 mr-2">•</span>
-                        <span className="text-gray-700">{benefit}</span>
+                        <span className="text-gray-700 text-sm sm:text-base">{benefit}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-gray-500">{t("product.nobenefits") || "No benefits information available."}</p>
+                  <p className="text-gray-500 text-sm sm:text-base">
+                    {t("product.nobenefits") || "No benefits information available."}
+                  </p>
                 )}
               </TabsContent>
 
-              <TabsContent value="how-to-use" className="space-y-4 pt-6">
-                <h3 className="text-xl font-semibold">{t("product.instructions") || "Usage Instructions"}</h3>
+              <TabsContent value="how-to-use" className="space-y-3 sm:space-y-4 pt-4 sm:pt-6">
+                <h3 className="text-lg sm:text-xl font-semibold">
+                  {t("product.instructions") || "Usage Instructions"}
+                </h3>
                 {productHowToUse.length > 0 ? (
                   <ol className="space-y-2 list-decimal list-inside">
                     {productHowToUse.map((step, index) => (
-                      <li key={index} className="text-gray-700">
+                      <li key={index} className="text-gray-700 text-sm sm:text-base">
                         {step}
                       </li>
                     ))}
                   </ol>
                 ) : (
-                  <p className="text-gray-500">{t("product.noinstructions") || "No usage instructions available."}</p>
+                  <p className="text-gray-500 text-sm sm:text-base">
+                    {t("product.noinstructions") || "No usage instructions available."}
+                  </p>
                 )}
               </TabsContent>
 
-              <TabsContent value="ingredients" className="space-y-4 pt-6">
-                <h3 className="text-xl font-semibold">{t("product.fullingredients") || "Full Ingredients List"}</h3>
+              <TabsContent value="ingredients" className="space-y-3 sm:space-y-4 pt-4 sm:pt-6">
+                <h3 className="text-lg sm:text-xl font-semibold">
+                  {t("product.fullingredients") || "Full Ingredients List"}
+                </h3>
                 {productIngredients.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {productIngredients.map((ingredient, index) => (
-                      <SimpleBadge key={index} variant="secondary" className="text-sm">
+                      <SimpleBadge key={index} variant="secondary" className="text-xs sm:text-sm">
                         {ingredient}
                       </SimpleBadge>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 text-sm sm:text-base">
                     {t("product.noingredients") || "No ingredients information available."}
                   </p>
                 )}
               </TabsContent>
 
-              <TabsContent value="concerns" className="space-y-4 pt-6">
-                <h3 className="text-xl font-semibold">{t("product.targetedconcerns") || "Concerns"}</h3>
+              <TabsContent value="concerns" className="space-y-3 sm:space-y-4 pt-4 sm:pt-6">
+                <h3 className="text-lg sm:text-xl font-semibold">{t("product.targetedconcerns") || "Concerns"}</h3>
                 {concerns.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {concerns.map((concern, index) => (
-                      <SimpleBadge key={index} variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">
+                      <SimpleBadge
+                        key={index}
+                        variant="outline"
+                        className="bg-rose-50 text-rose-700 border-rose-200 text-xs sm:text-sm"
+                      >
                         {concern}
                       </SimpleBadge>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500">{t("product.noconcerns") || "No concerns information available."}</p>
+                  <p className="text-gray-500 text-sm sm:text-base">
+                    {t("product.noconcerns") || "No concerns information available."}
+                  </p>
                 )}
               </TabsContent>
             </Tabs>

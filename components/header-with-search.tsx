@@ -58,7 +58,7 @@ export function HeaderWithSearch() {
               </Link>
             </nav>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <button
                 onClick={() => setIsSearchOpen(true)}
                 className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -66,16 +66,21 @@ export function HeaderWithSearch() {
                 <Search className="w-5 h-5" />
               </button>
 
-              <LanguageToggle />
+              <div className="hidden md:block">
+                <LanguageToggle />
+              </div>
 
               {user ? (
-                <Link href="/profile" className="p-2 text-gray-600 hover:text-gray-900 transition-colors">
+                <Link
+                  href="/profile"
+                  className="hidden md:block p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
                   <User className="w-5 h-5" />
                 </Link>
               ) : (
                 <Link
                   href="/auth/login"
-                  className="text-sm font-medium text-gray-900 hover:text-gray-600 transition-colors"
+                  className="hidden md:block text-sm font-medium text-gray-900 hover:text-gray-600 transition-colors"
                 >
                   {t("auth.login")}
                 </Link>
@@ -133,6 +138,32 @@ export function HeaderWithSearch() {
                 >
                   {t("nav.blog")}
                 </Link>
+
+                <div className="border-t border-gray-100 pt-4 px-4 space-y-4">
+                  <div className="flex items-center justify-center">
+                    <LanguageToggle />
+                  </div>
+
+                  {user ? (
+                    <Link
+                      href="/profile"
+                      className="flex items-center text-sm font-medium text-gray-900 hover:text-gray-600 transition-colors py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      {t("nav.profile") || "Profile"}
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/auth/login"
+                      className="flex items-center text-sm font-medium text-gray-900 hover:text-gray-600 transition-colors py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      {t("auth.login")}
+                    </Link>
+                  )}
+                </div>
               </nav>
             </div>
           )}
