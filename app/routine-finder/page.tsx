@@ -12,7 +12,6 @@ import { useCart } from "@/components/shopping-cart"
 import { HeaderWithSearch } from "@/components/header-with-search"
 import { Footer } from "@/components/footer"
 import type { RoutineResult } from "@/lib/routine-algorithm"
-import { allProducts } from "@/lib/all-products"
 import { Sun, Moon, Droplets, Sparkles, Shield, Heart } from "lucide-react"
 import { useTranslation } from "@/hooks/use-translation"
 
@@ -100,7 +99,7 @@ export default function RoutineFinderPage() {
   const [result, setResult] = useState<RoutineResult | null>(null)
   const [loading, setLoading] = useState(false)
   const { dispatch } = useCart()
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
 
   useEffect(() => {
     setStep(1)
@@ -146,6 +145,7 @@ export default function RoutineFinderPage() {
       concerns: concerns.join(", "),
       age: "25",
       routine,
+      language,
     }
 
     try {
@@ -168,19 +168,21 @@ export default function RoutineFinderPage() {
     }
   }
 
-  const addSingle = (id: string) => {
-    const p = allProducts[id as keyof typeof allProducts]
-    if (!p) return
-    dispatch({ type: "ADD_ITEM", payload: { id: p.id, name: p.name, price: p.price, image: p.image } })
+    const addSingle = (product: { id: string; name: string; price: number; image: string }) => {
+    dispatch({
+      type: "ADD_ITEM",
+      payload: { id: product.id, name: product.name, price: String(product.price), image: product.image },
+    })
     dispatch({ type: "TOGGLE_CART" })
   }
 
   const addAll = () => {
     if (!result) return
-    result.recommendedProducts.forEach((id) => {
-      const p = allProducts[id as keyof typeof allProducts]
-      if (!p) return
-      dispatch({ type: "ADD_ITEM", payload: { id: p.id, name: p.name, price: p.price, image: p.image } })
+    result.recommendedProducts.forEach((product) => {
+      dispatch({
+        type: "ADD_ITEM",
+        payload: { id: product.id, name: product.name, price: String(product.price), image: product.image },
+      })
     })
     dispatch({ type: "TOGGLE_CART" })
   }
@@ -199,6 +201,16 @@ export default function RoutineFinderPage() {
         return false
     }
   }
+
+  const productById = result
+      ? result.recommendedProducts.reduce(
+          (acc, product) => {
+            acc[product.id] = product
+            return acc
+          },
+          {} as Record<string, (typeof result.recommendedProducts)[number]>,
+        )
+      : {}
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -343,7 +355,7 @@ export default function RoutineFinderPage() {
                 </div>
                 <div className="space-y-4">
                   {result.AM.map((s, idx) => {
-                    const p = s.productId && allProducts[s.productId as keyof typeof allProducts]
+                    const p = s.productId ? productById[s.productId] : undefined
                     return (
                       <div
                         key={idx}
@@ -405,7 +417,7 @@ export default function RoutineFinderPage() {
                 </div>
                 <div className="space-y-4">
                   {result.PM.map((s, idx) => {
-                    const p = s.productId && allProducts[s.productId as keyof typeof allProducts]
+                    const p = s.productId ? productById[s.productId] : undefined
                     return (
                       <div
                         key={idx}
@@ -487,12 +499,10 @@ export default function RoutineFinderPage() {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                   {result.recommendedProducts &&
-                    result.recommendedProducts.map((pid) => {
-                      const p = allProducts[pid as keyof typeof allProducts]
-                      if (!p) return null
+                    result.recommendedProducts.map((p) => {
                       return (
                         <div
-                          key={pid}
+                          key={p.id}
                           className="bg-white/70 rounded-xl p-4 border border-rose-100 hover:shadow-md transition-shadow"
                         >
                           <Link href={`/products/${p.id}`} className="flex gap-3 mb-3">
@@ -516,7 +526,7 @@ export default function RoutineFinderPage() {
                             </div>
                           </Link>
                           <Button
-                            onClick={() => addSingle(p.id)}
+                            onClick={() => addSingle({ id: p.id, name: p.name, price: p.price, image: p.image })}
                             size="sm"
                             className="w-full bg-rose-500 hover:bg-rose-600 text-white"
                           >

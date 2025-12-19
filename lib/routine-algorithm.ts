@@ -1,4 +1,5 @@
 import { allProducts } from "./all-products"
+import { getTranslation, type Language } from "./i18n"
 
 export type ProductMap = Record<
   string,
@@ -30,6 +31,7 @@ export interface RoutineInput {
   concerns: string
   age: string
   routine: string
+  language?: Language
 }
 
 export interface RoutineResult {
@@ -38,7 +40,23 @@ export interface RoutineResult {
   PM: RoutineStep[]
   weekly?: Record<string, string>
   analysis: AnalysisSection[]
-  recommendedProducts: string[]
+  recommendedProducts: RecommendedProduct[]
+}
+
+export interface RecommendedProduct {
+  id: string
+  name: string
+  category: string
+  price: number
+  image: string
+  description?: string
+  brand?: string
+  size?: string
+  rating?: number
+  sub_category?: string
+  key_ingredients?: string[]
+  concerns?: string[]
+  skin_type?: string
 }
 
 export interface AnalysisSection {
@@ -53,6 +71,9 @@ const toTokens = (s: string) =>
     .toLowerCase()
     .split(/[\s,/]+/)
     .filter(Boolean)
+
+const formatTemplate = (template: string, values: Record<string, string>) =>
+  Object.entries(values).reduce((acc, [key, value]) => acc.replaceAll(`{${key}}`, value), template)
 
 // Map user concerns to canonical buckets
 const normalizeConcern = (c: string): string => {
@@ -322,89 +343,96 @@ function pickFor(
   return selected
 }
 
-const SKIN_ANALYSIS: Record<string, { desc: string; ingredients: string[] }> = {
+const SKIN_ANALYSIS: Record<string, { descKey: string; ingredients: string[] }> = {
   oily: {
-    desc: "Oily skin often feels greasy with enlarged pores and is prone to blackheads. Lightweight gel cleansers and oil-control ingredients like niacinamide and BHA help balance sebum production.",
-    ingredients: ["BHA", "Niacinamide", "Green Tea"],
+    descKey: "routine.analysis.skin.oily.desc",
+    ingredients: ["ingredient.bha", "ingredient.niacinamide", "ingredient.green_tea"],
   },
   dry: {
-    desc: "Dry skin often feels tight and may flake. Nourishing creams with ceramides, squalane and snail mucin restore moisture and strengthen the skin barrier.",
-    ingredients: ["Ceramides", "Squalane", "Snail Mucin"],
+    descKey: "routine.analysis.skin.dry.desc",
+    ingredients: ["ingredient.ceramides", "ingredient.squalane", "ingredient.snail_mucin"],
   },
   combination: {
-    desc: "Combination skin has an oily T‑zone and dry cheeks. Gentle exfoliation and balancing ingredients like niacinamide and AHAs help even texture and hydration.",
-    ingredients: ["Niacinamide", "Mandelic Acid", "Matcha"],
+    descKey: "routine.analysis.skin.combination.desc",
+    ingredients: ["ingredient.niacinamide", "ingredient.mandelic_acid", "ingredient.matcha"],
   },
   sensitive: {
-    desc: "Sensitive skin is easily irritated and prone to redness. Soothing ingredients like centella, mugwort and panthenol calm inflammation and repair the barrier.",
-    ingredients: ["Centella", "Mugwort", "Panthenol"],
+    descKey: "routine.analysis.skin.sensitive.desc",
+    ingredients: ["ingredient.centella", "ingredient.mugwort", "ingredient.panthenol"],
   },
   normal: {
-    desc: "Normal skin is balanced and not overly oily or dry. Maintain by using gentle cleansers, hydrating toners and broad‑spectrum sunscreen.",
-    ingredients: ["Hyaluronic Acid", "Glycerin", "Green Tea"],
+    descKey: "routine.analysis.skin.normal.desc",
+    ingredients: ["ingredient.hyaluronic_acid", "ingredient.glycerin", "ingredient.green_tea"],
   },
 }
 
-const CONCERN_ANALYSIS: Record<string, { desc: string; ingredients: string[] }> = {
+const CONCERN_ANALYSIS: Record<string, { descKey: string; ingredients: string[] }> = {
   acne: {
-    desc: "Acne requires pore‑clearing ingredients like BHA and retinoids alongside soothing agents. Introduce retinoids slowly to prevent irritation.",
-    ingredients: ["BHA", "Retinoid", "Mugwort", "Niacinamide"],
+    descKey: "routine.analysis.concern.acne.desc",
+    ingredients: ["ingredient.bha", "ingredient.retinoid", "ingredient.mugwort", "ingredient.niacinamide"],
   },
   pigment: {
-    desc: "Dark spots and hyperpigmentation are treated with vitamin C, niacinamide and tranexamic acid. Introduce retinoids and exfoliants gradually.",
-    ingredients: ["Vitamin C", "Niacinamide", "Tranexamic Acid"],
+    descKey: "routine.analysis.concern.pigment.desc",
+    ingredients: ["ingredient.vitamin_c", "ingredient.niacinamide", "ingredient.tranexamic_acid"],,
   },
   pores: {
-    desc: "Clogged pores benefit from salicylic acid and oil‑control ingredients like zinc PCA and tea tree. Regular exfoliation keeps pores clear.",
-    ingredients: ["BHA", "Niacinamide", "Green Tea"],
+    descKey: "routine.analysis.concern.pores.desc",
+    ingredients: ["ingredient.bha", "ingredient.niacinamide", "ingredient.green_tea"],
   },
   dehydration: {
-    desc: "Dehydrated skin lacks water, not oil. Humectants like hyaluronic acid and panthenol attract moisture, while ceramides lock it in.",
-    ingredients: ["Hyaluronic Acid", "Panthenol", "Beta‑Glucan"],
+    descKey: "routine.analysis.concern.dehydration.desc",
+    ingredients: ["ingredient.hyaluronic_acid", "ingredient.panthenol", "ingredient.beta_glucan"],
   },
   texture: {
-    desc: "Uneven texture needs gentle exfoliation and renewal. Use AHA/BHA on alternate nights and retinoids to boost cell turnover.",
-    ingredients: ["AHA", "BHA", "Retinoid"],
+    descKey: "routine.analysis.concern.texture.desc",
+    ingredients: ["ingredient.aha", "ingredient.bha", "ingredient.retinoid"],
   },
   aging: {
-    desc: "Fine lines and loss of firmness respond to retinoids, peptides and antioxidants. Start slow and use SPF daily.",
-    ingredients: ["Retinoid", "Peptides", "Vitamin C"],
+    descKey: "routine.analysis.concern.aging.desc",
+    ingredients: ["ingredient.retinoid", "ingredient.peptides", "ingredient.vitamin_c"],
   },
   sensitivity: {
-    desc: "Sensitive skin easily inflames; avoid harsh actives. Choose calming agents like centella, heartleaf and mugwort.",
-    ingredients: ["Centella", "Mugwort", "Panthenol"],
+    descKey: "routine.analysis.concern.sensitivity.desc",
+    ingredients: ["ingredient.centella", "ingredient.mugwort", "ingredient.panthenol"],
   },
   dryness: {
-    desc: "Dry skin benefits from occlusive creams and barrier‑repair ingredients. Look for ceramides, urea and squalane.",
-    ingredients: ["Ceramides", "Urea", "Squalane"],
+    descKey: "routine.analysis.concern.dryness.desc",
+    ingredients: ["ingredient.ceramides", "ingredient.urea", "ingredient.squalane"],
   },
   uneven: {
-    desc: "Uneven tone can be caused by sun damage or acne marks. Ingredients like vitamin C, niacinamide and retinoids help even skin tone.",
-    ingredients: ["Vitamin C", "Niacinamide", "Retinoid"],
+    descKey: "routine.analysis.concern.uneven.desc",
+    ingredients: ["ingredient.vitamin_c", "ingredient.niacinamide", "ingredient.retinoid"],
   },
 }
 
-function weeklyPlan(level: string, isSensitive: boolean, hasRet: boolean, hasExf: boolean): Record<string, string> {
+function weeklyPlan(
+  level: string,
+  isSensitive: boolean,
+  hasRet: boolean,
+  hasExf: boolean,
+  language: Language,
+): Record<string, string> {
   const plan: Record<string, string> = {}
+  const t = (key: string) => getTranslation(key, language)
 
   if (level === "advanced") {
-    plan["Exfoliant"] = "2–3 nights/week"
-    plan["Retinoid"] = "3–4 nights/week"
-    plan["Sleeping Pack"] = "1–2 times/week"
+    plan[t("routine.weekly.exfoliant")] = t("routine.weekly.exfoliant.advanced")
+    plan[t("routine.weekly.retinoid")] = t("routine.weekly.retinoid.advanced")
+    plan[t("routine.weekly.sleeping_pack")] = t("routine.weekly.sleeping_pack.advanced")
   } else if (level === "intermediate") {
-    plan["Exfoliant"] = "1–2 nights/week"
-    plan["Retinoid"] = "2–3 nights/week"
-    plan["Sleeping Pack"] = "1 time/week"
+    plan[t("routine.weekly.exfoliant")] = t("routine.weekly.exfoliant.intermediate")
+    plan[t("routine.weekly.retinoid")] = t("routine.weekly.retinoid.intermediate")
+    plan[t("routine.weekly.sleeping_pack")] = t("routine.weekly.sleeping_pack.intermediate")
   } else if (level === "easy") {
-    plan["Exfoliant"] = "1 night/week"
-    plan["Retinoid"] = "1 night/week"
-    plan["Sleeping Pack"] = "1 time/week"
+    plan[t("routine.weekly.exfoliant")] = t("routine.weekly.exfoliant.easy")
+    plan[t("routine.weekly.retinoid")] = t("routine.weekly.retinoid.easy")
+    plan[t("routine.weekly.sleeping_pack")] = t("routine.weekly.sleeping_pack.easy")
   }
 
   if (isSensitive) {
-    plan["Sunscreen"] = "Daily"
+    plan[t("routine.weekly.sunscreen")] = t("routine.weekly.sunscreen.daily")
   } else {
-    plan["Sunscreen"] = "Daily"
+    plan[t("routine.weekly.sunscreen")] = t("routine.weekly.sunscreen.daily")
   }
 
   return plan
@@ -412,6 +440,8 @@ function weeklyPlan(level: string, isSensitive: boolean, hasRet: boolean, hasExf
 
 export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): RoutineResult {
   const products: ProductMap = productsMap || (allProducts as unknown as ProductMap)
+  const language = input.language || "en"
+  const t = (key: string) => getTranslation(key, language)
 
   console.log(`[v0] Building routine for:`)
   console.log(`[v0]   - Skin type: ${input.skinType}`)
@@ -437,24 +467,25 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
 
     if (pid) usedInAM.add(pid)
 
-    const label =
+    const labelKey =
       slot === "cleanser"
-        ? "Gel/Foam Cleanser (AM – removes overnight oil & debris)"
+        ? "routine.step.am.cleanser"
         : slot === "hydrate"
-          ? "Hydrating Toner/Essence (AM)"
+          ? "routine.step.am.hydrate"
           : slot === "essence"
-            ? "Essence (AM)"
+            ? "routine.step.am.essence"
             : slot === "antioxidant"
-              ? "Antioxidant (AM)"
+              ? "routine.step.am.antioxidant"
               : slot === "serum"
-                ? "Serum (AM)"
+                ? "routine.step.am.serum"
                 : slot === "second_serum"
-                  ? "Second Serum (AM)"
+                  ? "routine.step.am.second_serum"
                   : slot === "moisturizer"
-                    ? "Moisturizer (AM)"
+                    ? "routine.step.am.moisturizer"
                     : slot === "spf"
-                      ? "Sunscreen SPF 50 (AM)"
-                      : slot
+                      ? "routine.step.am.spf"
+                      : ""
+    const label = labelKey ? t(labelKey) : slot
 
     AM.push({ step: label, productId: pid })
   })
@@ -464,24 +495,25 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
 
     if (pid) usedInPM.add(pid)
 
-    const label =
+    const labelKey =
       slot === "oil_cleanser"
-        ? "Oil Cleanser (PM – removes makeup & sunscreen)"
+        ? "routine.step.pm.oil_cleanser"
         : slot === "cleanser"
-          ? "Gel/Cream Cleanser (PM – second cleanse)"
+          ? "routine.step.pm.cleanser"
           : slot === "exfoliant_nights"
-            ? "Exfoliant (PM – 2–3 nights/week)"
+            ? "routine.step.pm.exfoliant"
             : slot === "treatment"
-              ? "Treatment (PM – retinoid/active)"
+              ? "routine.step.pm.treatment"
               : slot === "active_block"
-                ? "Active Slot (PM – rotate retinoid & exfoliant)"
+                ? "routine.step.pm.active_block"
                 : slot === "buffer"
-                  ? "Buffer/Soothing Essence (PM)"
+                  ? "routine.step.pm.buffer"
                   : slot === "moisturizer"
-                    ? "Moisturizer (PM)"
+                    ? "routine.step.pm.moisturizer"
                     : slot === "sleeping_pack"
-                      ? "Sleeping Pack (PM – 1–2×/week)"
-                      : slot
+                      ? "routine.step.pm.sleeping_pack"
+                      : ""
+    const label = labelKey ? t(labelKey) : slot
 
     PM.push({ step: label, productId: pid })
   })
@@ -494,32 +526,72 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
   )
   const hasRet = pickedActs.includes("retinoid")
   const hasExf = pickedActs.includes("BHA") || pickedActs.includes("aha") || pickedActs.includes("mandelic")
-  const weekly = weeklyPlan(level, input.skinType === "sensitive", hasRet, hasExf)
+  const weekly = weeklyPlan(level, input.skinType === "sensitive", hasRet, hasExf, language)
 
   const analysis: AnalysisSection[] = []
   if (SKIN_ANALYSIS[input.skinType]) {
-    const { desc, ingredients } = SKIN_ANALYSIS[input.skinType]
+    const { descKey, ingredients } = SKIN_ANALYSIS[input.skinType]
     analysis.push({
-      title: `${input.skinType.charAt(0).toUpperCase()}${input.skinType.slice(1)} Skin`,
-      description: desc,
-      ingredients,
+      title: t(`routine.analysis.skin.${input.skinType}.title`),
+      description: t(descKey),
+      ingredients: ingredients.map((ingredient) => t(ingredient)),
     })
   }
   const concernTokens = toTokens(input.concerns).map(normalizeConcern)
   concernTokens.forEach((c) => {
     if (CONCERN_ANALYSIS[c]) {
-      const { desc, ingredients } = CONCERN_ANALYSIS[c]
+      const { descKey, ingredients } = CONCERN_ANALYSIS[c]
       analysis.push({
-        title: c.replace(/^./, (x) => x.toUpperCase()),
-        description: desc,
-        ingredients,
+        title: t(`routine.concern.${c}`),
+        description: t(descKey),
+        ingredients: ingredients.map((ingredient) => t(ingredient)),
       })
     }
   })
 
-  const summary = `Your skin type is ${input.skinType.charAt(0).toUpperCase() + input.skinType.slice(1)}. Your top concerns: ${concernTokens.map((c) => c.replace(/^./, (x) => x.toUpperCase())).join(", ")}.`
+  const summary = formatTemplate(t("routine.summary"), {
+    skinType: t(`routine.skintype.${input.skinType}`),
+    concerns: concernTokens.map((c) => t(`routine.concern.${c}`)).join(", "),
+  })
 
-  const recommendedProducts = uniq([...AM, ...PM].map((s) => s.productId || "").filter(Boolean) as string[])
+  const recommendedProductIds = uniq([...AM, ...PM].map((s) => s.productId || "").filter(Boolean) as string[])
+  const recommendedProducts = recommendedProductIds
+    .map((id) => products[id])
+    .filter(Boolean)
+    .map((product) => ({
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      price: product.price,
+      image: product.image,
+      description: product.description,
+      brand: product.brand,
+      size: product.size,
+      rating: product.rating,
+      sub_category: product.sub_category,
+      key_ingredients: product.key_ingredients,
+      concerns: product.concerns,
+      skin_type: product.skin_type,
+    }))
+    
+  const recommendedProducts = recommendedProductIds
+    .map((id) => products[id])
+    .filter(Boolean)
+    .map((product) => ({
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      price: product.price,
+      image: product.image,
+      description: product.description,
+      brand: product.brand,
+      size: product.size,
+      rating: product.rating,
+      sub_category: product.sub_category,
+      key_ingredients: product.key_ingredients,
+      concerns: product.concerns,
+      skin_type: product.skin_type,
+    }))
 
   return { summary, AM, PM, weekly, analysis, recommendedProducts }
 }

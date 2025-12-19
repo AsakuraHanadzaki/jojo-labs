@@ -2,14 +2,45 @@ import { NextResponse } from "next/server"
 import type { RoutineInput, RoutineResult, ProductMap } from "@/lib/routine-algorithm"
 import { buildRoutine } from "@/lib/routine-algorithm"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { isValidLanguage, type Language } from "@/lib/i18n"
 
 function normalize(input: any): RoutineInput {
+  const language = String(input?.language || "en")
   return {
     skinType: String(input?.skinType || ""),
     concerns: String(input?.concerns || ""),
     age: String(input?.age || ""),
     routine: String(input?.routine || "basic"),
+    language: isValidLanguage(language) ? language : "en",
   }
+}
+
+const getTranslatedText = (
+  product: Record<string, unknown>,
+  field: "name" | "description" | "how_to_use",
+  language: Language,
+): string => {
+  if (language === "ru") {
+    const ruField = `${field}_ru`
+    return (product[ruField] as string) || (product[field] as string)
+  }
+  if (language === "hy") {
+    const hyField = `${field}_hy`
+    return (product[hyField] as string) || (product[field] as string)
+  }
+  return product[field] as string
+}
+
+const getTranslatedArray = (product: Record<string, unknown>, field: "skin_type", language: Language): string => {
+  if (language === "ru") {
+    const ruField = `${field}_ru`
+    return ((product[ruField] as string[]) || (product[field] as string[]))?.join(", ")
+  }
+  if (language === "hy") {
+    const hyField = `${field}_hy`
+    return ((product[hyField] as string[]) || (product[field] as string[]))?.join(", ")
+  }
+  return ((product[field] as string[]) || []).join(", ")
 }
 
 export async function POST(req: Request) {
@@ -37,18 +68,18 @@ export async function POST(req: Request) {
         productsMap = dbProducts.reduce((acc, p) => {
           acc[p.id] = {
             id: p.id,
-            name: p.name,
+            name: getTranslatedText(p, "name", input.language || "en"),
             category: p.category || p.category_id || "",
             price: p.price,
             image: p.image,
-            description: p.description,
+            description: getTranslatedText(p, "description", input.language || "en"),
             brand: p.brand,
             size: p.size,
             rating: p.rating,
             sub_category: p.sub_category,
             key_ingredients: p.ingredients || [],
             concerns: p.concerns || [],
-            skin_type: p.skin_type || "",
+            skin_type: getTranslatedArray(p, "skin_type", input.language || "en"),
           }
           return acc
         }, {} as ProductMap)

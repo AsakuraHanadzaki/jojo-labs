@@ -133,9 +133,9 @@ export const allProducts = {
     inStock: true,
     eco: false,
   },
-  "vt-reedle-shot-300": {
-    id: "vt-reedle-shot-300",
-    name: "VT - Reedle Shot 300",
+  "vt-reedle-shot-100": {
+    id: "vt-reedle-shot-100",
+    name: "VT - Reedle Shot 100",
     price: "14,000 AMD",
     image: "https://45gkphzzl3vmvuua.public.blob.vercel-storage.com/vt-reedle-shot-300",
     category: "Treatments",
