@@ -155,8 +155,17 @@ export default function RoutineFinderPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       })
-      const data: RoutineResult = await res.json()
-      setResult(data)
+      const contentType = res.headers.get("content-type") || ""
+      if (contentType.includes("application/json")) {
+        const data = await res.json()
+        if (!res.ok) {
+          throw new Error(data?.error || "Request failed")
+        }
+        setResult(data as RoutineResult)
+      } else {
+        const text = await res.text()
+        throw new Error(text || "Request failed")
+      }
       setTimeout(() => {
         document.getElementById("results-section")?.scrollIntoView({ behavior: "smooth", block: "start" })
       }, 100)
