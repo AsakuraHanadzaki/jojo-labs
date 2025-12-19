@@ -97,7 +97,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     // If user is logged in, load saved cart from Supabase
     if (user) {
-      loadSavedCart()
+      loadSavedCart().catch((err) => {
+        console.log("[v0] Failed to load saved cart, continuing with local cart")
+      })
     }
   }, [user])
 
@@ -118,10 +120,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!user) return
 
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("saved_carts")
         .select("product_id, quantity, products(id, name, price, image)")
         .eq("user_id", user.id)
+
+      if (error) {
+        console.log("[v0] Error loading saved cart, continuing with local cart")
+        return
+      }
 
       if (data && data.length > 0) {
         // Merge saved cart with current cart
@@ -147,7 +154,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         })
       }
     } catch (error) {
-      console.error("Error loading saved cart:", error)
+      console.log("[v0] Error loading saved cart, continuing with local cart:", error)
     }
   }
 
@@ -169,7 +176,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         await supabase.from("saved_carts").insert(cartItems)
       }
     } catch (error) {
-      console.error("Error saving cart:", error)
+      console.log("[v0] Error saving cart, cart will persist in localStorage only:", error)
     }
   }
 

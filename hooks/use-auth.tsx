@@ -29,17 +29,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } = await supabase.auth.getUser()
       setUser(user)
     } catch (error) {
-      console.error("Error refreshing user:", error)
+      console.log("[v0] Error refreshing user, continuing without auth:", error)
       setUser(null)
     }
   }
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    const initAuth = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        setUser(session?.user ?? null)
+      } catch (error) {
+        console.log("[v0] Error getting initial session, continuing without auth")
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    initAuth()
 
     // Listen for auth changes
     const {
