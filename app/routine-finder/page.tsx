@@ -101,6 +101,13 @@ export default function RoutineFinderPage() {
   const [result, setResult] = useState<RoutineResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lastPayload, setLastPayload] = useState<{
+    skinType: string
+    concerns: string
+    age: string
+    routine: string
+    language: string
+  } | null>(null)
   const { dispatch } = useCart()
   const { t, language } = useTranslation()
 
@@ -136,27 +143,19 @@ export default function RoutineFinderPage() {
     })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const routine = ROUTINE_MAP[routineSteps] || "easy"
-    const finalSkin = sensitive === "yes" ? "sensitive" : skinType
-
-    // NOTE: The backend routine-algorithm now uses key ingredients
-    // from each product (via product.ingredients) to pick products.
-    const body = {
-      skinType: finalSkin,
-      concerns: concerns.join(", "),
-      age: "25",
-      routine,
-      language,
-    }
-
+  const requestRoutine = async (payload: {
+    skinType: string
+    concerns: string
+    age: string
+    routine: string
+    language: string
+  }) => {
     try {
       setLoading(true)
       const res = await fetch("/api/routine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
       })
       const contentType = res.headers.get("content-type") || ""
       if (contentType.includes("application/json")) {
@@ -182,6 +181,33 @@ export default function RoutineFinderPage() {
       setLoading(false)
     }
   }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const routine = ROUTINE_MAP[routineSteps] || "easy"
+    const finalSkin = sensitive === "yes" ? "sensitive" : skinType
+
+    // NOTE: The backend routine-algorithm now uses key ingredients
+    // from each product (via product.ingredients) to pick products.
+    const payload = {
+      skinType: finalSkin,
+      concerns: concerns.join(", "),
+      age: "25",
+      routine,
+      language,
+    }
+
+    setLastPayload(payload)
+    await requestRoutine(payload)
+  }
+
+  useEffect(() => {
+    if (!lastPayload || loading) return
+    if (lastPayload.language === language) return
+    const payload = { ...lastPayload, language }
+    setLastPayload(payload)
+    void requestRoutine(payload)
+  }, [language, lastPayload, loading])
 
   const addSingle = (product: { id: string; name: string; price: number; image: string }) => {
     dispatch({
