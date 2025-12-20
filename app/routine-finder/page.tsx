@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import type React from "react"
+
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
@@ -98,6 +100,7 @@ export default function RoutineFinderPage() {
   const [followUps, setFollowUps] = useState<Record<string, string | string[]>>({})
   const [result, setResult] = useState<RoutineResult | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { dispatch } = useCart()
   const { t, language } = useTranslation()
 
@@ -109,15 +112,14 @@ export default function RoutineFinderPage() {
     setConcerns([])
     setFollowUps({})
     setResult(null)
+    setError(null)
   }, [])
 
   const nextStep = () => setStep((s) => s + 1)
   const prevStep = () => setStep((s) => (s > 1 ? s - 1 : s))
 
   const toggleConcern = (c: string) => {
-    setConcerns((prev) =>
-      prev.includes(c) ? prev.filter((x) => x !== c) : prev.length < 5 ? [...prev, c] : prev,
-    )
+    setConcerns((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : prev.length < 5 ? [...prev, c] : prev))
   }
 
   const updateFollow = (qid: string, value: string) => {
@@ -134,7 +136,8 @@ export default function RoutineFinderPage() {
     })
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     const routine = ROUTINE_MAP[routineSteps] || "easy"
     const finalSkin = sensitive === "yes" ? "sensitive" : skinType
 
@@ -173,14 +176,14 @@ export default function RoutineFinderPage() {
         document.getElementById("results-section")?.scrollIntoView({ behavior: "smooth", block: "start" })
       }, 100)
     } catch (e) {
-      alert(t("routine.error"))
+      setError(t("routine.error"))
       console.error(e)
     } finally {
       setLoading(false)
     }
   }
 
-    const addSingle = (product: { id: string; name: string; price: number; image: string }) => {
+  const addSingle = (product: { id: string; name: string; price: number; image: string }) => {
     dispatch({
       type: "ADD_ITEM",
       payload: { id: product.id, name: product.name, price: String(product.price), image: product.image },
@@ -214,15 +217,16 @@ export default function RoutineFinderPage() {
     }
   }
 
-  const productById = result
-      ? result.recommendedProducts.reduce(
-          (acc, product) => {
-            acc[product.id] = product
-            return acc
-          },
-          {} as Record<string, (typeof result.recommendedProducts)[number]>,
-        )
-      : {}
+  const productById = useMemo(() => {
+    if (!result?.recommendedProducts) return {}
+    return result.recommendedProducts.reduce(
+      (acc, p) => {
+        acc[p.id] = p
+        return acc
+      },
+      {} as Record<string, (typeof result.recommendedProducts)[0]>,
+    )
+  }, [result])
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -325,6 +329,11 @@ export default function RoutineFinderPage() {
               <CardTitle>{t("routine.result")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-8">
+              {error && (
+                <div className="bg-red-50 rounded-2xl p-6 border border-red-100">
+                  <p className="text-red-800 text-lg leading-relaxed">{error}</p>
+                </div>
+              )}
               <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border border-pink-100">
                 <p className="text-gray-800 text-lg leading-relaxed">{result.summary}</p>
               </div>
@@ -339,9 +348,7 @@ export default function RoutineFinderPage() {
                     <h3 className="text-xl font-bold mb-3 text-blue-900">{section.title}</h3>
                     <p className="text-gray-700 mb-4 leading-relaxed">{section.description}</p>
                     <div className="bg-white/60 rounded-xl p-4">
-                      <p className="text-sm font-semibold text-blue-800 mb-2">
-                        {t("routine.ingredients")}
-                      </p>
+                      <p className="text-sm font-semibold text-blue-800 mb-2">{t("routine.ingredients")}</p>
                       <div className="flex flex-wrap gap-2">
                         {section.ingredients.map((ingredient, idx) => (
                           <span
@@ -374,9 +381,7 @@ export default function RoutineFinderPage() {
                         className="bg-white/70 rounded-xl p-4 border border-yellow-100 hover:shadow-md transition-shadow"
                       >
                         <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0 bg-yellow-100 p-2 rounded-lg">
-                            {getStepIcon(s.step, true)}
-                          </div>
+                          <div className="flex-shrink-0 bg-yellow-100 p-2 rounded-lg">{getStepIcon(s.step, true)}</div>
                           <div className="flex-grow">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full text-xs font-bold">
@@ -403,9 +408,7 @@ export default function RoutineFinderPage() {
                                     {p.name}
                                   </Link>
                                   {p.description && (
-                                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                                      {p.description}
-                                    </p>
+                                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">{p.description}</p>
                                   )}
                                 </div>
                               </div>
@@ -436,9 +439,7 @@ export default function RoutineFinderPage() {
                         className="bg-white/70 rounded-xl p-4 border border-indigo-100 hover:shadow-md transition-shadow"
                       >
                         <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0 bg-indigo-100 p-2 rounded-lg">
-                            {getStepIcon(s.step, false)}
-                          </div>
+                          <div className="flex-shrink-0 bg-indigo-100 p-2 rounded-lg">{getStepIcon(s.step, false)}</div>
                           <div className="flex-grow">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full text-xs font-bold">
@@ -465,9 +466,7 @@ export default function RoutineFinderPage() {
                                     {p.name}
                                   </Link>
                                   {p.description && (
-                                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                                      {p.description}
-                                    </p>
+                                    <p className="text-gray-600 text-sm mt-1 line-clamp-2">{p.description}</p>
                                   )}
                                 </div>
                               </div>
@@ -531,9 +530,7 @@ export default function RoutineFinderPage() {
                               <h4 className="font-semibold text-gray-900 mb-1">{p.name}</h4>
                               <p className="text-rose-600 font-bold">{p.price}</p>
                               {p.description && (
-                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                                  {p.description}
-                                </p>
+                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{p.description}</p>
                               )}
                             </div>
                           </Link>
