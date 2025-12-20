@@ -155,7 +155,7 @@ export default function BlogDetailPage() {
 
             <div
               className="prose prose-lg max-w-none prose-headings:font-bold prose-h2:text-3xl prose-h3:text-2xl prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-rose-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl"
-              dangerouslySetInnerHTML={{ __html: getTranslatedField("content") }}
+              dangerouslySetInnerHTML={{ __html: formatContent(getTranslatedField("content")) }}
             />
           </article>
         </div>
