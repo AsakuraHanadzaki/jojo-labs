@@ -73,6 +73,28 @@ export default function BlogDetailPage() {
     })
   }
 
+  const containsHtml = (value: string) => /<\/?[a-z][\s\S]*>/i.test(value)
+
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+
+  const formatContent = (value: string) => {
+    if (!value) return ""
+    if (containsHtml(value)) return value
+
+    return value
+      .split(/\n{2,}/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean)
+      .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br />")}</p>`)
+      .join("")
+  }
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
