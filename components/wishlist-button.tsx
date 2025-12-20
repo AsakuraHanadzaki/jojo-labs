@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
@@ -22,12 +22,11 @@ export function WishlistButton({ productId, productName }: WishlistButtonProps) 
   const [isInWishlist, setIsInWishlist] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Check if product is in wishlist on mount
-  useState(() => {
+  useEffect(() => {
     if (user) {
       checkWishlist()
     }
-  })
+  }, [user, productId])
 
   const checkWishlist = async () => {
     if (!user) return

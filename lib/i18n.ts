@@ -328,6 +328,7 @@ export const translations = {
     "profile.viewdetails": "View Details",
     "profile.removefromwishlist": "Remove from Wishlist",
     "profile.addtocartfromwishlist": "Add to Cart",
+    "profile.backToStore": "Back to store",
     "privacy.title": "Privacy Policy of JojoLabs.am", // Added privacy policy translations
     "privacy.effectiveDate": "Effective Date: December 18, 2025", // Added privacy policy translations
   },

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/use-auth"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "@/hooks/use-translation"
 import { createClient } from "@/lib/supabase/client"
@@ -137,11 +138,16 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <h1 className="text-3xl font-bold">{t("profile.title")}</h1>
-        <Button variant="outline" onClick={signOut}>
-          {t("auth.logout")}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/">{t("profile.backToStore")}</Link>
+          </Button>
+          <Button variant="outline" onClick={signOut}>
+            {t("auth.logout")}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="account" className="space-y-6">
