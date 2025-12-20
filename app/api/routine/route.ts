@@ -22,19 +22,11 @@ const getTranslatedText = (
 ): string => {
   if (language === "ru") {
     const ruField = `${field}_ru`
-    const translatedValue = (product[ruField] as string) || (product[field] as string)
-    console.log(
-      `[v0] getTranslatedText: field=${field}, lang=ru, ru_value=${product[ruField] ? "exists" : "missing"}, fallback=${product[field] ? "exists" : "missing"}`,
-    )
-    return translatedValue
+    return (product[ruField] as string) || (product[field] as string)
   }
   if (language === "hy") {
     const hyField = `${field}_hy`
-    const translatedValue = (product[hyField] as string) || (product[field] as string)
-    console.log(
-      `[v0] getTranslatedText: field=${field}, lang=hy, hy_value=${product[hyField] ? "exists" : "missing"}, fallback=${product[field] ? "exists" : "missing"}`,
-    )
-    return translatedValue
+    return (product[hyField] as string) || (product[field] as string)
   }
   return product[field] as string
 }
@@ -87,16 +79,6 @@ export async function POST(req: Request) {
 
       if (dbProducts && dbProducts.length > 0) {
         productsMap = dbProducts.reduce((acc, p) => {
-          if (Object.keys(acc).length === 0) {
-            console.log(`[v0] First product translation check:`)
-            console.log(`[v0]   - ID: ${p.id}`)
-            console.log(`[v0]   - name: ${p.name?.substring(0, 30)}...`)
-            console.log(`[v0]   - name_ru: ${p.name_ru?.substring(0, 30) || "missing"}...`)
-            console.log(`[v0]   - description: ${p.description?.substring(0, 50) || "missing"}...`)
-            console.log(`[v0]   - description_ru: ${p.description_ru?.substring(0, 50) || "missing"}...`)
-            console.log(`[v0]   - Language requested: ${input.language}`)
-          }
-
           acc[p.id] = {
             id: p.id,
             name: getTranslatedText(p, "name", input.language || "en"),

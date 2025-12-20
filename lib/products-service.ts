@@ -48,29 +48,6 @@ export async function fetchProductById(id: string): Promise<Product | null> {
   }
 }
 
-export async function fetchProductsByIds(ids: string[]): Promise<Product[]> {
-  if (!ids.length) return []
-  try {
-    const supabase = getSupabaseBrowserClient()
-
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .in("id", ids)
-      .eq("in_stock", true)
-
-    if (error) {
-      console.error("[v0] fetchProductsByIds: Supabase error", error)
-      return []
-    }
-
-    return data || []
-  } catch (error) {
-    console.error("[v0] fetchProductsByIds: Fatal error", error)
-    return []
-  }
-}
-
 // Fetch products for routine finder based on skin type and concerns
 export async function fetchRoutineProducts(skinType: string, concerns: string[]): Promise<Product[]> {
   try {

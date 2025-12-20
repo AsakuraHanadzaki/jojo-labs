@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
@@ -16,8 +16,6 @@ import { Footer } from "@/components/footer"
 import type { RoutineResult } from "@/lib/routine-algorithm"
 import { Sun, Moon, Droplets, Sparkles, Shield, Heart } from "lucide-react"
 import { useTranslation } from "@/hooks/use-translation"
-import type { Product } from "@/lib/supabase/types"
-import { fetchProductsByIds, getTranslatedField } from "@/lib/products-service"
 
 interface FollowUpQuestion {
   id: string
@@ -103,14 +101,6 @@ export default function RoutineFinderPage() {
   const [result, setResult] = useState<RoutineResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [lastPayload, setLastPayload] = useState<{
-    skinType: string
-    concerns: string
-    age: string
-    routine: string
-    language: string
-  } | null>(null)
-  const [productDetails, setProductDetails] = useState<Record<string, Product>>({})
   const { dispatch } = useCart()
   const { t, language } = useTranslation()
 
@@ -146,19 +136,27 @@ export default function RoutineFinderPage() {
     })
   }
 
-  const requestRoutine = async (payload: {
-    skinType: string
-    concerns: string
-    age: string
-    routine: string
-    language: string
-  }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const routine = ROUTINE_MAP[routineSteps] || "easy"
+    const finalSkin = sensitive === "yes" ? "sensitive" : skinType
+
+    // NOTE: The backend routine-algorithm now uses key ingredients
+    // from each product (via product.ingredients) to pick products.
+    const body = {
+      skinType: finalSkin,
+      concerns: concerns.join(", "),
+      age: "25",
+      routine,
+      language,
+    }
+
     try {
       setLoading(true)
       const res = await fetch("/api/routine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       })
       const contentType = res.headers.get("content-type") || ""
       if (contentType.includes("application/json")) {
@@ -184,33 +182,6 @@ export default function RoutineFinderPage() {
       setLoading(false)
     }
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const routine = ROUTINE_MAP[routineSteps] || "easy"
-    const finalSkin = sensitive === "yes" ? "sensitive" : skinType
-
-    // NOTE: The backend routine-algorithm now uses key ingredients
-    // from each product (via product.ingredients) to pick products.
-    const payload = {
-      skinType: finalSkin,
-      concerns: concerns.join(", "),
-      age: "25",
-      routine,
-      language,
-    }
-
-    setLastPayload(payload)
-    await requestRoutine(payload)
-  }
-
-  useEffect(() => {
-    if (!lastPayload || loading) return
-    if (lastPayload.language === language) return
-    const payload = { ...lastPayload, language }
-    setLastPayload(payload)
-    void requestRoutine(payload)
-  }, [language, lastPayload, loading])
 
   const addSingle = (product: { id: string; name: string; price: number; image: string }) => {
     dispatch({
@@ -246,27 +217,15 @@ export default function RoutineFinderPage() {
     }
   }
 
-  useEffect(() => {
-    if (!result?.recommendedProducts?.length) {
-      setProductDetails({})
-      return
-    }
-
-    const ids = result.recommendedProducts.map((product) => product.id)
-
-    const loadProductDetails = async () => {
-      const products = await fetchProductsByIds(ids)
-      const mapped = products.reduce(
-        (acc, product) => {
-          acc[product.id] = product
-          return acc
-        },
-        {} as Record<string, Product>,
-      )
-      setProductDetails(mapped)
-    }
-
-    void loadProductDetails()
+  const productById = useMemo(() => {
+    if (!result?.recommendedProducts) return {}
+    return result.recommendedProducts.reduce(
+      (acc, p) => {
+        acc[p.id] = p
+        return acc
+      },
+      {} as Record<string, (typeof result.recommendedProducts)[0]>,
+    )
   }, [result])
 
   return (
@@ -552,15 +511,6 @@ export default function RoutineFinderPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                   {result.recommendedProducts &&
                     result.recommendedProducts.map((p) => {
-                      const detailedProduct = productDetails[p.id]
-                      const displayName = detailedProduct
-                        ? getTranslatedField(detailedProduct, "name", language)
-                        : p.name
-                      const displayDescription = detailedProduct
-                        ? getTranslatedField(detailedProduct, "description", language)
-                        : p.description
-                      const displayPrice = detailedProduct?.price ?? p.price
-
                       return (
                         <div
                           key={p.id}
@@ -570,24 +520,22 @@ export default function RoutineFinderPage() {
                             <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
                               <Image
                                 src={p.image || "/placeholder.jpg"}
-                                alt={displayName}
+                                alt={p.name}
                                 width={64}
                                 height={64}
                                 className="w-full h-full object-cover"
                               />
                             </div>
                             <div className="flex-grow">
-                              <h4 className="font-semibold text-gray-900 mb-1">{displayName}</h4>
-                              <p className="text-rose-600 font-bold">{displayPrice}</p>
-                              {displayDescription && (
-                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{displayDescription}</p>
+                              <h4 className="font-semibold text-gray-900 mb-1">{p.name}</h4>
+                              <p className="text-rose-600 font-bold">{p.price}</p>
+                              {p.description && (
+                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{p.description}</p>
                               )}
                             </div>
                           </Link>
                           <Button
-                            onClick={() =>
-                              addSingle({ id: p.id, name: displayName, price: displayPrice, image: p.image })
-                            }
+                            onClick={() => addSingle({ id: p.id, name: p.name, price: p.price, image: p.image })}
                             size="sm"
                             className="w-full bg-rose-500 hover:bg-rose-600 text-white"
                           >
