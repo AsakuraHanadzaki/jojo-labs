@@ -13,7 +13,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <Image
-              src="https://45gkphzzl3vmvuua.public.blob.vercel-storage.com/Frame%2010.png"
+              src="/images/design-mode/Frame%2010.png"
               alt="JoJo Labs Footer Logo"
               width={120}
               height={40}

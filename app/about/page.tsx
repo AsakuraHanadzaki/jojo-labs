@@ -35,7 +35,7 @@ export default function AboutPage() {
             </div>
             <div className="bg-gradient-to-br from-rose-100 to-pink-200 rounded-3xl p-8">
               <Image
-                src="https://45gkphzzl3vmvuua.public.blob.vercel-storage.com/Bober%20and%20Panda%20short"
+                src="/images/design-mode/Bober%20and%20Panda%20short.png"
                 alt="Mascots"
                 width={400}
                 height={400}

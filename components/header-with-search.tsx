@@ -28,7 +28,7 @@ export function HeaderWithSearch() {
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex-shrink-0">
               <Image
-                src="https://45gkphzzl3vmvuua.public.blob.vercel-storage.com/Frame%206.svg"
+                src="/images/design-mode/Frame%206.svg"
                 alt="JoJo Labs Logo"
                 width={110}
                 height={40}
