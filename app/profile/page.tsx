@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useCart } from "@/components/shopping-cart"
 import { User, Package, ShoppingCart, Heart } from "lucide-react"
 import Image from "next/image"
 
@@ -55,6 +56,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const { t } = useTranslation()
   const supabase = createClient()
+  const { removeItem: removeCartItem } = useCart()
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
@@ -128,13 +130,14 @@ export default function ProfilePage() {
     fetchWishlist()
   }
 
-  const removeFromSavedCart = async (id: string) => {
+  const removeFromSavedCart = async (id: string, productId: string) => {
     console.log("[v0] removeFromSavedCart: Deleting item", id)
     const { error } = await supabase.from("saved_carts").delete().eq("id", id)
     if (error) {
       console.error("[v0] removeFromSavedCart: Error", error)
     } else {
       console.log("[v0] removeFromSavedCart: Success")
+      removeCartItem(productId)
       fetchSavedCart()
     }
   }
@@ -281,7 +284,11 @@ export default function ProfilePage() {
                         <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
                         <p className="font-medium mt-2">AMD {item.products.price}</p>
                         <div className="flex gap-2 mt-4">
-                          <Button size="sm" variant="outline" onClick={() => removeFromSavedCart(item.id)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => removeFromSavedCart(item.id, item.products.id)}
+                          >
                             {t("profile.removefromcart") || "Remove"}
                           </Button>
                         </div>

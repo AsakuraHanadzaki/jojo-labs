@@ -129,6 +129,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!user) return
 
     try {
+      dispatch({ type: "CLEAR_CART" })
       const { data, error } = await supabase
         .from("saved_carts")
         .select("product_id, quantity, products(id, name, price, image)")
@@ -140,7 +141,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       if (data && data.length > 0) {
-        dispatch({ type: "CLEAR_CART" })
         data.forEach((item: any) => {
           if (item.products) {
             dispatch({
@@ -185,6 +185,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           console.log("[v0] Error saving cart:", error)
+        }
+        
+        const productIds = cartItems.map((item) => `"${item.product_id}"`).join(",")
+        const { error: deleteError } = await supabase
+          .from("saved_carts")
+          .delete()
+          .eq("user_id", user.id)
+          .not("product_id", "in", `(${productIds})`)
+
+        if (deleteError) {
+          console.log("[v0] Error removing stale cart items:", deleteError)
         }
       } else {
         await supabase.from("saved_carts").delete().eq("user_id", user.id)

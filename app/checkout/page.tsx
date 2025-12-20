@@ -241,12 +241,6 @@ export default function CheckoutPage() {
                       </div>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-3 p-4 border rounded-3xl">
-                    <RadioGroupItem value="cash" id="cash" />
-                    <Label htmlFor="cash" className="flex-1 cursor-pointer">
-                      <span>{t("checkout.cash")}</span>
-                    </Label>
-                  </div>
                 </RadioGroup>
 
                 {paymentMethod === "card" && (
