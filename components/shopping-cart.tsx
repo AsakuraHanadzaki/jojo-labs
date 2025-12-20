@@ -83,22 +83,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const supabase = createClient()
 
   useEffect(() => {
-    const savedCart = localStorage.getItem("cart")
-    if (savedCart) {
-      try {
-        const items = JSON.parse(savedCart)
-        items.forEach((item: CartItem) => {
-          dispatch({ type: "ADD_ITEM", payload: item })
-        })
-      } catch (error) {
-        console.error("Error loading cart from localStorage:", error)
+    if (!user) {
+      const savedCart = localStorage.getItem("cart")
+      if (savedCart) {
+        try {
+          const items = JSON.parse(savedCart)
+          items.forEach((item: CartItem) => {
+            dispatch({ type: "ADD_ITEM", payload: item })
+          })
+        } catch (error) {
+          console.error("Error loading cart from localStorage:", error)
+        }
       }
-    }
-
-    // If user is logged in, load saved cart from Supabase
-    if (user) {
+    } else {
       loadSavedCart().catch((err) => {
-        console.log("[v0] Failed to load saved cart, continuing with local cart")
+        console.log("[v0] Failed to load saved cart, trying localStorage fallback")
+        const savedCart = localStorage.getItem("cart")
+        if (savedCart) {
+          try {
+            const items = JSON.parse(savedCart)
+            items.forEach((item: CartItem) => {
+              dispatch({ type: "ADD_ITEM", payload: item })
+            })
+          } catch (error) {
+            console.error("Error loading cart from localStorage:", error)
+          }
+        }
       })
     }
   }, [user])
@@ -110,7 +120,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("cart")
     }
 
-    // If user is logged in, sync cart to Supabase
     if (user && state.items.length > 0) {
       saveSavedCart()
     }
@@ -127,11 +136,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.log("[v0] Error loading saved cart, continuing with local cart")
-        return
+        throw error
       }
 
       if (data && data.length > 0) {
-        // Merge saved cart with current cart
+        dispatch({ type: "CLEAR_CART" })
         data.forEach((item: any) => {
           if (item.products) {
             dispatch({
@@ -143,7 +152,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 image: item.products.image,
               },
             })
-            // Update quantity if more than 1
             if (item.quantity > 1) {
               dispatch({
                 type: "UPDATE_QUANTITY",
@@ -154,7 +162,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         })
       }
     } catch (error) {
-      console.log("[v0] Error loading saved cart, continuing with local cart:", error)
+      console.log("[v0] Error loading saved cart:", error)
+      throw error
     }
   }
 
@@ -162,10 +171,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!user) return
 
     try {
-      // Delete existing saved cart items
-      await supabase.from("saved_carts").delete().eq("user_id", user.id)
-
-      // Insert current cart items
       const cartItems = state.items.map((item) => ({
         user_id: user.id,
         product_id: item.id,
@@ -173,7 +178,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }))
 
       if (cartItems.length > 0) {
-        await supabase.from("saved_carts").insert(cartItems)
+        const { error } = await supabase.from("saved_carts").upsert(cartItems, {
+          onConflict: "user_id,product_id",
+          ignoreDuplicates: false,
+        })
+
+        if (error) {
+          console.log("[v0] Error saving cart:", error)
+        }
+      } else {
+        await supabase.from("saved_carts").delete().eq("user_id", user.id)
       }
     } catch (error) {
       console.log("[v0] Error saving cart, cart will persist in localStorage only:", error)
@@ -184,7 +198,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const { quantity = 1, ...rest } = item
 
     try {
-      // Validate stock availability
       const response = await fetch("/api/cart/validate-stock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -193,7 +206,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         console.warn("Stock validation API returned error, allowing add to cart anyway")
-        // If API fails, allow adding to cart (degraded experience rather than blocked)
         for (let i = 0; i < quantity; i++) {
           dispatch({ type: "ADD_ITEM", payload: rest })
         }
@@ -203,14 +215,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const validation = await response.json()
 
       if (!validation.available) {
-        // Show stock error message
         if (typeof window !== "undefined") {
           alert(validation.message || "This item is out of stock")
         }
         return false
       }
 
-      // Add items one by one to maintain count
       for (let i = 0; i < quantity; i++) {
         dispatch({ type: "ADD_ITEM", payload: rest })
       }
@@ -218,7 +228,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return true
     } catch (error) {
       console.error("Error adding item to cart:", error)
-      // On network error, allow adding anyway (fallback behavior)
       console.warn("Failed to validate stock, adding to cart anyway")
       for (let i = 0; i < quantity; i++) {
         dispatch({ type: "ADD_ITEM", payload: rest })
@@ -258,7 +267,6 @@ export function useCart() {
     const { quantity = 1, ...rest } = item
 
     try {
-      // Validate stock availability
       const response = await fetch("/api/cart/validate-stock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -267,7 +275,6 @@ export function useCart() {
 
       if (!response.ok) {
         console.warn("Stock validation API returned error, allowing add to cart anyway")
-        // If API fails, allow adding to cart (degraded experience rather than blocked)
         for (let i = 0; i < quantity; i++) {
           dispatch({ type: "ADD_ITEM", payload: rest })
         }
@@ -277,14 +284,12 @@ export function useCart() {
       const validation = await response.json()
 
       if (!validation.available) {
-        // Show stock error message
         if (typeof window !== "undefined") {
           alert(validation.message || "This item is out of stock")
         }
         return false
       }
 
-      // Add items one by one to maintain count
       for (let i = 0; i < quantity; i++) {
         dispatch({ type: "ADD_ITEM", payload: rest })
       }
@@ -292,7 +297,6 @@ export function useCart() {
       return true
     } catch (error) {
       console.error("Error adding item to cart:", error)
-      // On network error, allow adding anyway (fallback behavior)
       console.warn("Failed to validate stock, adding to cart anyway")
       for (let i = 0; i < quantity; i++) {
         dispatch({ type: "ADD_ITEM", payload: rest })
@@ -325,7 +329,6 @@ export function useCart() {
     updateQuantity,
     toggleCart,
     clearCart,
-    // Keep dispatch for backward compatibility
     state,
     dispatch,
   }

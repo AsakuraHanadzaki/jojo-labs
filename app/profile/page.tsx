@@ -34,7 +34,7 @@ interface WishlistItem {
     id: string
     name: string
     price: number
-    image_url: string
+    image: string
   }
 }
 
@@ -46,7 +46,7 @@ interface SavedCartItem {
     id: string
     name: string
     price: number
-    image_url: string
+    image: string
   }
 }
 
@@ -98,18 +98,22 @@ export default function ProfilePage() {
   }
 
   const fetchWishlist = async () => {
-    const { data } = await supabase
+    console.log("[v0] fetchWishlist: Starting for user", user?.id)
+    const { data, error } = await supabase
       .from("wishlists")
-      .select("id, product_id, products(id, name, price, image_url)")
+      .select("id, product_id, products(id, name, price, image)")
       .eq("user_id", user?.id)
+    console.log("[v0] fetchWishlist: Result", { data, error })
     if (data) setWishlist(data as any)
   }
 
   const fetchSavedCart = async () => {
-    const { data } = await supabase
+    console.log("[v0] fetchSavedCart: Starting for user", user?.id)
+    const { data, error } = await supabase
       .from("saved_carts")
-      .select("id, product_id, quantity, products(id, name, price, image_url)")
+      .select("id, product_id, quantity, products(id, name, price, image)")
       .eq("user_id", user?.id)
+    console.log("[v0] fetchSavedCart: Result", { data, error })
     if (data) setSavedCart(data as any)
   }
 
@@ -122,6 +126,17 @@ export default function ProfilePage() {
   const removeFromWishlist = async (id: string) => {
     await supabase.from("wishlists").delete().eq("id", id)
     fetchWishlist()
+  }
+
+  const removeFromSavedCart = async (id: string) => {
+    console.log("[v0] removeFromSavedCart: Deleting item", id)
+    const { error } = await supabase.from("saved_carts").delete().eq("id", id)
+    if (error) {
+      console.error("[v0] removeFromSavedCart: Error", error)
+    } else {
+      console.log("[v0] removeFromSavedCart: Success")
+      fetchSavedCart()
+    }
   }
 
   if (loading) {
@@ -255,7 +270,7 @@ export default function ProfilePage() {
                   {savedCart.map((item) => (
                     <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
                       <Image
-                        src={item.products.image_url || "/placeholder.svg"}
+                        src={item.products.image || "/placeholder.svg"}
                         alt={item.products.name}
                         width={80}
                         height={80}
@@ -265,6 +280,11 @@ export default function ProfilePage() {
                         <p className="font-medium">{item.products.name}</p>
                         <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
                         <p className="font-medium mt-2">AMD {item.products.price}</p>
+                        <div className="flex gap-2 mt-4">
+                          <Button size="sm" variant="outline" onClick={() => removeFromSavedCart(item.id)}>
+                            {t("profile.removefromcart") || "Remove"}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -288,7 +308,7 @@ export default function ProfilePage() {
                   {wishlist.map((item) => (
                     <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
                       <Image
-                        src={item.products.image_url || "/placeholder.svg"}
+                        src={item.products.image || "/placeholder.svg"}
                         alt={item.products.name}
                         width={80}
                         height={80}
