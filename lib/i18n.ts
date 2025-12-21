@@ -453,7 +453,7 @@ export const translations = {
     "product.benefits": "Преимущества",
     "product.keyingredients": "Ключевые ингредиенты",
     "product.addressesconcerns": "Этот продукт решает следующие проблемы",
-    "product.targetedconcerns": "помогает против", // Add targetedconcerns translation for Russian
+    "product.targetedconcerns": "Помогает против", // Add targetedconcerns translation for Russian
 
     // About Page
     "about.title": "О JoJo Labs",
@@ -775,7 +775,7 @@ export const translations = {
     "product.benefits": "Առավելություններ",
     "product.keyingredients": "Հիմնական բաղադրիչներ",
     "product.addressesconcerns": "Այս արտադրանքը լուծում է հետևյալ խնդիրները",
-    "product.targetedconcerns": "օգնում է դեմ", // Add targetedconcerns translation for Armenian
+    "product.targetedconcerns": "Օգնում է դեմ", // Add targetedconcerns translation for Armenian
 
     // About Page
     "about.title": "JoJo Labs-ի մասին",
