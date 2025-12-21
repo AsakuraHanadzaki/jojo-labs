@@ -11,8 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useCart } from "@/components/shopping-cart"
-import { User, Package, ShoppingCart, Heart } from "lucide-react"
+import { User, Package, Heart } from "lucide-react"
 import Image from "next/image"
 
 interface Profile {
@@ -39,29 +38,15 @@ interface WishlistItem {
   }
 }
 
-interface SavedCartItem {
-  id: string
-  product_id: string
-  quantity: number
-  products: {
-    id: string
-    name: string
-    price: number
-    image: string
-  }
-}
-
 export default function ProfilePage() {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const { t } = useTranslation()
   const supabase = createClient()
-  const { removeItem: removeCartItem } = useCart()
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [wishlist, setWishlist] = useState<WishlistItem[]>([])
-  const [savedCart, setSavedCart] = useState<SavedCartItem[]>([])
   const [isEditing, setIsEditing] = useState(false)
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
@@ -77,7 +62,6 @@ export default function ProfilePage() {
       fetchProfile()
       fetchOrders()
       fetchWishlist()
-      fetchSavedCart()
     }
   }, [user])
 
@@ -109,16 +93,6 @@ export default function ProfilePage() {
     if (data) setWishlist(data as any)
   }
 
-  const fetchSavedCart = async () => {
-    console.log("[v0] fetchSavedCart: Starting for user", user?.id)
-    const { data, error } = await supabase
-      .from("saved_carts")
-      .select("id, product_id, quantity, products(id, name, price, image)")
-      .eq("user_id", user?.id)
-    console.log("[v0] fetchSavedCart: Result", { data, error })
-    if (data) setSavedCart(data as any)
-  }
-
   const handleSaveProfile = async () => {
     await supabase.from("profiles").update({ full_name: fullName, phone: phone }).eq("id", user?.id)
     setIsEditing(false)
@@ -128,18 +102,6 @@ export default function ProfilePage() {
   const removeFromWishlist = async (id: string) => {
     await supabase.from("wishlists").delete().eq("id", id)
     fetchWishlist()
-  }
-
-  const removeFromSavedCart = async (id: string, productId: string) => {
-    console.log("[v0] removeFromSavedCart: Deleting item", id)
-    const { error } = await supabase.from("saved_carts").delete().eq("id", id)
-    if (error) {
-      console.error("[v0] removeFromSavedCart: Error", error)
-    } else {
-      console.log("[v0] removeFromSavedCart: Success")
-      removeCartItem(productId)
-      fetchSavedCart()
-    }
   }
 
   if (loading) {
@@ -169,7 +131,7 @@ export default function ProfilePage() {
       </div>
 
       <Tabs defaultValue="account" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="account">
             <User className="w-4 h-4 mr-2" />
             {t("profile.account")}
@@ -177,10 +139,6 @@ export default function ProfilePage() {
           <TabsTrigger value="orders">
             <Package className="w-4 h-4 mr-2" />
             {t("profile.orders")}
-          </TabsTrigger>
-          <TabsTrigger value="cart">
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            {t("profile.cart")}
           </TabsTrigger>
           <TabsTrigger value="wishlist">
             <Heart className="w-4 h-4 mr-2" />
@@ -250,48 +208,6 @@ export default function ProfilePage() {
                       <div className="text-right">
                         <p className="font-medium">AMD {order.total}</p>
                         <p className="text-sm text-muted-foreground capitalize">{order.status}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="cart">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("profile.cart")}</CardTitle>
-              <CardDescription>Items saved in your cart</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {savedCart.length === 0 ? (
-                <p className="text-muted-foreground">{t("profile.nocart")}</p>
-              ) : (
-                <div className="space-y-4">
-                  {savedCart.map((item) => (
-                    <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
-                      <Image
-                        src={item.products.image || "/placeholder.svg"}
-                        alt={item.products.name}
-                        width={80}
-                        height={80}
-                        className="rounded object-cover"
-                      />
-                      <div className="flex-1">
-                        <p className="font-medium">{item.products.name}</p>
-                        <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
-                        <p className="font-medium mt-2">AMD {item.products.price}</p>
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => removeFromSavedCart(item.id, item.products.id)}
-                          >
-                            {t("profile.removefromcart") || "Remove"}
-                          </Button>
-                        </div>
                       </div>
                     </div>
                   ))}

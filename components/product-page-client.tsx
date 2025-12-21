@@ -63,8 +63,23 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
     const suffix = language === "ru" ? "_ru" : language === "hy" ? "_hy" : ""
     const translatedField = `${baseField}${suffix}`
     const value = product[translatedField] || product[baseField]
-    if (Array.isArray(value)) return value
-    if (typeof value === "string") return [value]
+
+    // Handle array values
+    if (Array.isArray(value)) return value.filter(Boolean)
+
+    // Handle string values (split by comma if needed)
+    if (typeof value === "string") {
+      // If it's a comma-separated string, split it
+      if (value.includes(",")) {
+        return value
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean)
+      }
+      // Otherwise return as single-item array
+      return value ? [value] : []
+    }
+
     return []
   }
 
@@ -74,6 +89,8 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
   const productHowToUse = getTranslatedArray("how_to_use")
   const productIngredients = getTranslatedArray("ingredients")
   const concerns = getTranslatedArray("concerns")
+  const skinType = getTranslatedString("skin_type")
+  const subCategory = getTranslatedString("sub_category")
 
   const isLowStock = stockStatus.stock > 0 && stockStatus.stock <= stockStatus.lowStockThreshold
   const isOutOfStock = !stockStatus.inStock || stockStatus.stock <= 0
@@ -307,7 +324,7 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
               </TabsList>
 
               <TabsContent value="benefits" className="space-y-3 sm:space-y-4 pt-4 sm:pt-6">
-                <h3 className="text-lg sm:text-xl font-semibold">{t("product.keybenefits") || "Key Benefits"}</h3>
+                <h3 className="text-lg sm:text-xl font-semibold">{t("product.benefits") || "Key Benefits"}</h3>
                 {productBenefits.length > 0 ? (
                   <ul className="space-y-2">
                     {productBenefits.map((benefit, index) => (

@@ -79,17 +79,6 @@ export default function ContactPage() {
             </div>
 
             <div className="space-y-6">
-              <Card className="rounded-3xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-3">
-                    <MapPin className="w-5 h-5 text-rose-600" />
-                    <span>{t("contact.info.address")}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 whitespace-pre-line">{t("contact.info.address.value")}</p>
-                </CardContent>
-              </Card>
 
               <Card className="rounded-3xl">
                 <CardHeader>
@@ -133,13 +122,19 @@ export default function ContactPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("contact.social")}</h3>
               <div className="flex space-x-4">
                 <a
-                  href="#"
+                  href="https://www.instagram.com/jojolabs.am?igsh=azdwNTBxYXFhMWxw"
                   className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
                 >
                   <span className="text-sm font-medium">IG</span>
                 </a>
                 <a
-                  href="#"
+                  href="https://t.me/jojolabsam"
+                  className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <span className="text-sm font-medium">TG</span>
+                </a>
+                <a
+                  href="https://www.tiktok.com/@jojo.labs?_r=1&_t=ZN-92PKcnVeMyc"
                   className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow"
                 >
                   <span className="text-sm font-medium">TT</span>
