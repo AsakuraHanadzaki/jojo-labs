@@ -261,6 +261,11 @@ export default function RoutineFinderPage() {
     )
   }, [result])
 
+  const setSkinTypeWithLog = (value: string) => {
+    console.log("[v0] setSkinType called with:", value)
+    setSkinType(value)
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <HeaderWithSearch />
@@ -277,7 +282,7 @@ export default function RoutineFinderPage() {
               {step === 1 && (
                 <>
                   <p className="font-semibold">{t("routine.skintype")}</p>
-                  <RadioGroup value={skinType} onValueChange={setSkinType} className="space-y-2">
+                  <RadioGroup value={skinType} onValueChange={setSkinTypeWithLog} className="space-y-2">
                     {SKIN_TYPES.map((st) => (
                       <div key={st.value} className="flex items-center space-x-2">
                         <RadioGroupItem value={st.value} id={`sk-${st.value}`} />
