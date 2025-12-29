@@ -104,6 +104,15 @@ export default function RoutineFinderPage() {
   const { dispatch } = useCart()
   const { t, language } = useTranslation()
 
+  const followUpQuestions = useMemo(
+    () =>
+      concerns
+        .map((concern) => FOLLOW_UPS[concern])
+        .filter((question): question is FollowUpQuestion => Boolean(question)),
+    [concerns],
+  )
+  const totalSteps = followUpQuestions.length > 0 ? 5 : 4
+
   useEffect(() => {
     setStep(1)
     setSkinType("")
@@ -114,6 +123,20 @@ export default function RoutineFinderPage() {
     setResult(null)
     setError(null)
   }, [])
+
+  useEffect(() => {
+    setFollowUps((prev) => {
+      if (followUpQuestions.length === 0) return {}
+      const validIds = new Set(followUpQuestions.map((question) => question.id))
+      const next: Record<string, string | string[]> = {}
+      Object.entries(prev).forEach(([key, value]) => {
+        if (validIds.has(key)) {
+          next[key] = value
+        }
+      })
+      return next
+    })
+  }, [followUpQuestions])
 
   const nextStep = () => setStep((s) => s + 1)
   const prevStep = () => setStep((s) => (s > 1 ? s - 1 : s))
@@ -148,6 +171,7 @@ export default function RoutineFinderPage() {
       concerns: concerns.join(", "),
       age: "25",
       routine,
+      followUps,
       language,
     }
 
@@ -212,6 +236,15 @@ export default function RoutineFinderPage() {
         return !!routineSteps
       case 4:
         return concerns.length > 0
+      case 5:
+        return followUpQuestions.every((question) => {
+          const answer = followUps[question.id]
+          if (!answer) return false
+          if (question.multi && Array.isArray(answer)) {
+            return answer.length > 0
+          }
+          return typeof answer === "string" && answer.length > 0
+        })
       default:
         return false
     }
@@ -237,7 +270,7 @@ export default function RoutineFinderPage() {
           <Card className="max-w-3xl mx-auto">
             <CardHeader>
               <CardTitle>
-                {t("routine.step")} {step} {t("routine.of")} 5
+                {t("routine.step")} {step} {t("routine.of")} {totalSteps}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -307,11 +340,54 @@ export default function RoutineFinderPage() {
                   </div>
                 </>
               )}
+              {step === 5 && (
+                <>
+                  <p className="font-semibold">{t("routine.concerns.followup")}</p>
+                  <div className="space-y-6">
+                    {followUpQuestions.map((question) => (
+                      <div key={question.id} className="space-y-3">
+                        <p className="font-medium text-gray-900">{question.question}</p>
+                        {question.multi ? (
+                          <div className="grid gap-2">
+                            {Object.entries(question.options).map(([key, label]) => {
+                              const current = followUps[question.id]
+                              const checked = Array.isArray(current) && current.includes(key)
+                              return (
+                                <div key={key} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`${question.id}-${key}`}
+                                    checked={checked}
+                                    onCheckedChange={() => updateFollowMulti(question.id, key)}
+                                  />
+                                  <Label htmlFor={`${question.id}-${key}`}>{label}</Label>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <RadioGroup
+                            value={typeof followUps[question.id] === "string" ? (followUps[question.id] as string) : ""}
+                            onValueChange={(value) => updateFollow(question.id, value)}
+                            className="space-y-2"
+                          >
+                            {Object.entries(question.options).map(([key, label]) => (
+                              <div key={key} className="flex items-center space-x-2">
+                                <RadioGroupItem value={key} id={`${question.id}-${key}`} />
+                                <Label htmlFor={`${question.id}-${key}`}>{label}</Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
               <div className="flex justify-between pt-4">
                 <Button variant="outline" onClick={prevStep} disabled={step === 1}>
                   {t("routine.back")}
                 </Button>
-                {step < 4 ? (
+                {step < totalSteps ? (
                   <Button onClick={nextStep} disabled={!canProceed()}>
                     {t("routine.next")}
                   </Button>

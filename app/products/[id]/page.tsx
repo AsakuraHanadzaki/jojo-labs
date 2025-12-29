@@ -11,7 +11,7 @@ export async function generateStaticParams() {
       const supabase = await createClient()
       const { data: products } = await supabase.from("products").select("id")
 
-    if (products && products.length > 0) {
+      if (products && products.length > 0) {
         return products.map((product) => ({
           id: product.id,
         }))
@@ -28,7 +28,7 @@ export async function generateStaticParams() {
 }
 
 export const dynamicParams = true
-export const dynamic = "force-dynamic"
+// export const dynamic = "force-dynamic"
 
 async function fetchProduct(id: string) {
   try {
@@ -61,8 +61,8 @@ async function fetchProduct(id: string) {
   }
 }
 
-export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const { id } = params
   const product = await fetchProduct(id)
 
   if (!product) {

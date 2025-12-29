@@ -43,22 +43,31 @@ interface RadioGroupItemProps extends Omit<React.InputHTMLAttributes<HTMLInputEl
 const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
   ({ className, value, checked, onChange, name, ...props }, ref) => {
     return (
-      <input
-        ref={ref}
-        type="radio"
-        value={value}
-        checked={checked}
-        onChange={onChange}
-        name={name}
-        className={cn(
-          "aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          "disabled:cursor-not-allowed disabled:opacity-50",
-          "cursor-pointer",
-          className,
-        )}
-        {...props}
-      />
+      <div className="relative flex items-center">
+        <input
+          ref={ref}
+          type="radio"
+          value={value}
+          checked={checked}
+          onChange={onChange}
+          name={name}
+          className="sr-only peer"
+          {...props}
+        />
+        <div
+          className={cn(
+            "aspect-square h-4 w-4 rounded-full border-2 border-gray-300 cursor-pointer",
+            "peer-checked:border-rose-600 peer-checked:bg-rose-600",
+            "peer-focus-visible:ring-2 peer-focus-visible:ring-rose-600 peer-focus-visible:ring-offset-2",
+            "peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+            "transition-all duration-200",
+            "flex items-center justify-center",
+            className,
+          )}
+        >
+          {checked && <div className="h-2 w-2 rounded-full bg-white" />}
+        </div>
+      </div>
     )
   },
 )
