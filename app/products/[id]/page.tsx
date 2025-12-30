@@ -2,43 +2,13 @@ import { notFound } from "next/navigation"
 import ProductPageClient from "@/components/product-page-client"
 import { createClient } from "@/lib/supabase/server"
 import { allProducts } from "@/lib/all-products"
-import { createClient as createBrowserClient } from "@/lib/supabase/client"
 
+export const dynamic = "force-dynamic"
 export const dynamicParams = true
 export const revalidate = 60
 
 export async function generateStaticParams() {
-  try {
-    console.log("[v0] generateStaticParams: Starting...")
-    const hasSupabaseEnv = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-
-    if (hasSupabaseEnv) {
-      console.log("[v0] generateStaticParams: Fetching products from Supabase...")
-      const supabase = createBrowserClient()
-      const { data: products, error } = await supabase.from("products").select("id")
-
-      if (error) {
-        console.error("[v0] generateStaticParams error:", error)
-      }
-
-      if (products && products.length > 0) {
-        console.log(`[v0] generateStaticParams: Found ${products.length} products`)
-        console.log("[v0] Product IDs:", products.map((p) => p.id).join(", "))
-        return products.map((product) => ({
-          id: product.id,
-        }))
-      }
-    } else {
-      console.warn("[v0] generateStaticParams: Supabase env vars not found")
-    }
-  } catch (error) {
-    console.error("[v0] generateStaticParams exception:", error)
-  }
-
-  console.log("[v0] generateStaticParams: Using fallback products")
-  return Object.values(allProducts).map((product) => ({
-    id: product.id,
-  }))
+  return []
 }
 
 async function fetchProduct(id: string) {
@@ -75,8 +45,8 @@ async function fetchProduct(id: string) {
   }
 }
 
-export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const { id } = params
   console.log(`[v0] ProductPage: Rendering page for id: ${id}`)
   const product = await fetchProduct(id)
 

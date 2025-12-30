@@ -1,0 +1,10 @@
+{
+  "buildCommand": "next build",
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/products/:id",
+      "destination": "/products/[id]"
+    }
+  ]
+}
