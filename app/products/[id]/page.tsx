@@ -4,9 +4,8 @@ import { createClient } from "@/lib/supabase/server"
 import { allProducts } from "@/lib/all-products"
 import { createClient as createBrowserClient } from "@/lib/supabase/client"
 
-export const dynamic = "force-dynamic"
 export const dynamicParams = true
-export const revalidate = 60 // Revalidate every 60 seconds
+export const revalidate = 60
 
 export async function generateStaticParams() {
   try {
@@ -67,7 +66,6 @@ async function fetchProduct(id: string) {
     }
 
     console.log("[v0] fetchProduct: Product not found in Supabase, checking hardcoded")
-    // Fallback to hardcoded products
     const hardcodedProduct = Object.values(allProducts).find((p) => p.id === id)
     return hardcodedProduct || null
   } catch (error) {
