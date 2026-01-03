@@ -3,12 +3,32 @@ import ProductPageClient from "@/components/product-page-client"
 import { createClient } from "@/lib/supabase/server"
 import { allProducts } from "@/lib/all-products"
 
-export const dynamic = "force-dynamic"
 export const dynamicParams = true
 export const revalidate = 60
 
 export async function generateStaticParams() {
-  return []
+  try {
+    const hasSupabaseEnv = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+    if (!hasSupabaseEnv) {
+      console.log("[v0] generateStaticParams: No Supabase env, using hardcoded products")
+      return Object.keys(allProducts).map((id) => ({ id }))
+    }
+
+    const supabase = await createClient()
+    const { data: products, error } = await supabase.from("products").select("id")
+
+    if (error || !products) {
+      console.error("[v0] generateStaticParams error:", error)
+      return Object.keys(allProducts).map((id) => ({ id }))
+    }
+
+    console.log(`[v0] generateStaticParams: Generated ${products.length} static params`)
+    return products.map((p) => ({ id: p.id }))
+  } catch (error) {
+    console.error("[v0] generateStaticParams exception:", error)
+    return Object.keys(allProducts).map((id) => ({ id }))
+  }
 }
 
 async function fetchProduct(id: string) {
@@ -45,8 +65,8 @@ async function fetchProduct(id: string) {
   }
 }
 
-export default async function ProductPage({ params }: { params: { id: string } }) {
-  const { id } = params
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   console.log(`[v0] ProductPage: Rendering page for id: ${id}`)
   const product = await fetchProduct(id)
 
