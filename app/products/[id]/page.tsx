@@ -7,13 +7,11 @@ import { allProducts } from "@/lib/all-products"
 export const dynamicParams = true
 export const revalidate = 60
 
-// Use browser client which works during build time
 export async function generateStaticParams() {
   try {
     const hasSupabaseEnv = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 
     if (!hasSupabaseEnv) {
-      console.log("[v0] generateStaticParams: No Supabase env, using hardcoded products")
       return Object.keys(allProducts).map((id) => ({ id }))
     }
 
@@ -29,7 +27,6 @@ export async function generateStaticParams() {
       return Object.keys(allProducts).map((id) => ({ id }))
     }
 
-    console.log(`[v0] generateStaticParams: Generated ${products.length} static params`)
     return products.map((p) => ({ id: p.id }))
   } catch (error) {
     console.error("[v0] generateStaticParams exception:", error)
@@ -38,12 +35,10 @@ export async function generateStaticParams() {
 }
 
 async function fetchProduct(id: string) {
-  console.log(`[v0] fetchProduct: Fetching product with id: ${id}`)
   try {
     const hasSupabaseEnv = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 
     if (!hasSupabaseEnv) {
-      console.log("[v0] fetchProduct: No Supabase env, using hardcoded products")
       const hardcodedProduct = Object.values(allProducts).find((p) => p.id === id)
       return hardcodedProduct || null
     }
@@ -57,11 +52,9 @@ async function fetchProduct(id: string) {
     }
 
     if (data) {
-      console.log(`[v0] fetchProduct: Found product in Supabase: ${data.id}`)
       return data
     }
 
-    console.log("[v0] fetchProduct: Product not found in Supabase, checking hardcoded")
     const hardcodedProduct = Object.values(allProducts).find((p) => p.id === id)
     return hardcodedProduct || null
   } catch (error) {
@@ -71,16 +64,13 @@ async function fetchProduct(id: string) {
   }
 }
 
-export default async function ProductPage({ params }: { params: { id: string } }) {
-  const { id } = params
-  console.log(`[v0] ProductPage: Rendering page for id: ${id}`)
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const product = await fetchProduct(id)
 
   if (!product) {
-    console.log(`[v0] ProductPage: Product not found for id: ${id}`)
     notFound()
   }
 
-  console.log(`[v0] ProductPage: Successfully loaded product: ${product.id}`)
   return <ProductPageClient product={product} productId={id} />
 }
