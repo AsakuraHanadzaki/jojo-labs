@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation"
 import ProductPageClient from "@/components/product-page-client"
 import { createClient } from "@/lib/supabase/server"
+import { createBrowserClient } from "@supabase/ssr"
 import { allProducts } from "@/lib/all-products"
 
 export const dynamicParams = true
 export const revalidate = 60
 
+// Use browser client which works during build time
 export async function generateStaticParams() {
   try {
     const hasSupabaseEnv = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -15,7 +17,11 @@ export async function generateStaticParams() {
       return Object.keys(allProducts).map((id) => ({ id }))
     }
 
-    const supabase = await createClient()
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
+
     const { data: products, error } = await supabase.from("products").select("id")
 
     if (error || !products) {
@@ -65,8 +71,8 @@ async function fetchProduct(id: string) {
   }
 }
 
-export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const { id } = params
   console.log(`[v0] ProductPage: Rendering page for id: ${id}`)
   const product = await fetchProduct(id)
 
