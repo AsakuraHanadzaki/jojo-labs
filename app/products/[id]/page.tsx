@@ -30,8 +30,8 @@ async function fetchProduct(id: string) {
   }
 }
 
-export default async function ProductPage({ params }: { params: { id: string } }) {
-  const { id } = params
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   console.log("[v0] ProductPage: Rendering page for id:", id)
 
   const product = await fetchProduct(id)
