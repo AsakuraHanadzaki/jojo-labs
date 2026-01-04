@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createBrowserClient } from "@supabase/ssr"
 import { allProducts } from "@/lib/all-products"
 
+export const dynamic = "force-dynamic"
 export const dynamicParams = true
 export const revalidate = 60
 
@@ -35,10 +36,13 @@ export async function generateStaticParams() {
 }
 
 async function fetchProduct(id: string) {
+  console.log("[v0] fetchProduct: Fetching product with id:", id)
+
   try {
     const hasSupabaseEnv = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 
     if (!hasSupabaseEnv) {
+      console.log("[v0] fetchProduct: No Supabase env, using hardcoded products")
       const hardcodedProduct = Object.values(allProducts).find((p) => p.id === id)
       return hardcodedProduct || null
     }
@@ -52,9 +56,11 @@ async function fetchProduct(id: string) {
     }
 
     if (data) {
+      console.log("[v0] fetchProduct: Found product in Supabase:", data.id)
       return data
     }
 
+    console.log("[v0] fetchProduct: Product not found in Supabase, checking hardcoded")
     const hardcodedProduct = Object.values(allProducts).find((p) => p.id === id)
     return hardcodedProduct || null
   } catch (error) {
@@ -66,11 +72,15 @@ async function fetchProduct(id: string) {
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  console.log("[v0] ProductPage: Rendering page for id:", id)
+
   const product = await fetchProduct(id)
 
   if (!product) {
+    console.log("[v0] ProductPage: Product not found, returning 404")
     notFound()
   }
 
+  console.log("[v0] ProductPage: Successfully loaded product:", product.id)
   return <ProductPageClient product={product} productId={id} />
 }
