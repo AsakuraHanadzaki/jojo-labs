@@ -1,31 +1,28 @@
 import { notFound } from "next/navigation"
 import ProductPageClient from "@/components/product-page-client"
+import { allProducts } from "@/lib/all-products"
 import { createClient } from "@/lib/supabase/server"
-import { createBrowserClient } from "@supabase/ssr"
 
 export const dynamic = "force-dynamic"
 export const dynamicParams = true
 
 export async function generateStaticParams() {
   try {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    )
+    const supabase = await createClient()
 
     const { data: products, error } = await supabase.from("products").select("id")
 
     if (error || !products) {
       console.error("[v0] generateStaticParams error:", error)
-      return []
+      throw error 
     }
 
     return products.map((product) => ({
       id: product.id,
     }))
   } catch (error) {
-    console.error("[v0] generateStaticParams exception:", error)
-    return []
+    console.error("[v0] generateStaticParams exception, using fallback products:", error)
+    return Object.keys(allProducts).map((id) => ({ id }))
   }
 }
 
@@ -38,15 +35,27 @@ async function fetchProduct(id: string) {
 
     if (error) {
       console.error("[v0] fetchProduct error:", error)
-      return null
+      throw error
     }
 
-    console.log("[v0] fetchProduct: Found product:", data?.id)
-    return data
+    if (data) {
+      console.log("[v0] fetchProduct: Found product:", data.id)
+      return data
+    }
+
+    console.warn("[v0] fetchProduct: Product not found in Supabase, checking fallback data")
   } catch (error) {
     console.error("[v0] fetchProduct exception:", error)
-    return null
   }
+  
+  const fallbackProduct = allProducts[id]
+  if (fallbackProduct) {
+    console.log("[v0] fetchProduct: Using fallback product:", id)
+    return fallbackProduct
+  }
+
+  console.error("[v0] fetchProduct: Product not found in Supabase or fallback:", id)
+  return null
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
