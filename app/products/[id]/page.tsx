@@ -5,12 +5,10 @@ import { createBrowserClient } from "@supabase/ssr"
 
 export const dynamic = "force-dynamic"
 export const dynamicParams = true
+export const revalidate = 3600
 
 export async function generateStaticParams() {
-  console.log("[v0] generateStaticParams: Fetching all product IDs for static generation")
-
   try {
-    // Use browser client for build-time access
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -18,17 +16,14 @@ export async function generateStaticParams() {
 
     const { data: products, error } = await supabase.from("products").select("id")
 
-    if (error) {
+    if (error || !products) {
       console.error("[v0] generateStaticParams error:", error)
       return []
     }
 
-    console.log("[v0] generateStaticParams: Found", products?.length || 0, "products")
-    return (
-      products?.map((product) => ({
-        id: product.id,
-      })) || []
-    )
+    return products.map((product) => ({
+      id: product.id,
+    }))
   } catch (error) {
     console.error("[v0] generateStaticParams exception:", error)
     return []
@@ -36,24 +31,19 @@ export async function generateStaticParams() {
 }
 
 async function fetchProduct(id: string) {
-  console.log("[v0] fetchProduct: Fetching product with id:", id)
+  console.log("[v0] ProductPage: Fetching product with ID:", id)
 
   try {
     const supabase = await createClient()
     const { data, error } = await supabase.from("products").select("*").eq("id", id).maybeSingle()
 
     if (error) {
-      console.error("[v0] fetchProduct Supabase error:", error)
+      console.error("[v0] fetchProduct error:", error)
       return null
     }
 
-    if (data) {
-      console.log("[v0] fetchProduct: Found product in Supabase:", data.id)
-      return data
-    }
-
-    console.log("[v0] fetchProduct: Product not found in Supabase")
-    return null
+    console.log("[v0] fetchProduct: Found product:", data?.id)
+    return data
   } catch (error) {
     console.error("[v0] fetchProduct exception:", error)
     return null
@@ -61,8 +51,10 @@ async function fetchProduct(id: string) {
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  console.log("[v0] ProductPage: Starting to render product page")
+
   const { id } = await params
-  console.log("[v0] ProductPage: Rendering page for id:", id)
+  console.log("[v0] ProductPage: Extracted ID from params:", id)
 
   const product = await fetchProduct(id)
 
@@ -71,6 +63,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     notFound()
   }
 
-  console.log("[v0] ProductPage: Successfully loaded product:", product.id)
+  console.log("[v0] ProductPage: Successfully loaded product, rendering client component")
   return <ProductPageClient product={product} productId={id} />
 }
