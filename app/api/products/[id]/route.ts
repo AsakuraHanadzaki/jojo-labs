@@ -7,6 +7,15 @@ import { isSupabaseConfigured } from "@/lib/supabase/config"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    
+    if (!isSupabaseConfigured()) {
+      const fallbackProduct = allProducts[id as keyof typeof allProducts]
+      if (fallbackProduct) {
+        return NextResponse.json(fallbackProduct)
+      }
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
     const supabase = await getSupabaseServerClient()
 
     const { data, error } = await supabase.from("products").select("*").eq("id", id).maybeSingle()

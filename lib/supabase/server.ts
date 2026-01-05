@@ -1,11 +1,13 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { getSupabaseConfig, isSupabaseConfigured } from "@/lib/supabase/config"
+import { createNoopSupabaseClient, type SupabaseClientLike } from "@/lib/supabase/noop-client"
 
 export async function createClient() {
   return getSupabaseServerClient()
 }
 
-export async function getSupabaseServerClient() {
+export async function getSupabaseServerClient(): Promise<SupabaseClientLike> {
   let cookieStore: ReturnType<typeof cookies> | null = null
 
   try {
@@ -36,7 +38,12 @@ export async function getSupabaseServerClient() {
         },
       }
 
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+ const config = getSupabaseConfig()
+  if (!isSupabaseConfigured(config)) {
+    return createNoopSupabaseClient("Supabase server env vars are missing.")
+  }
+
+  return createServerClient(config.url, config.anonKey, {
     cookies: {
       getAll: cookieHandler.getAll,
       setAll: cookieHandler.setAll,
