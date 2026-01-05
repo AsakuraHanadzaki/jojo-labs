@@ -7,6 +7,17 @@ import { isSupabaseConfigured } from "@/lib/supabase/config"
 export const dynamic = "force-dynamic"
 export const dynamicParams = true
 
+function getIdVariants(id: string) {
+  const decoded = decodeURIComponent(id)
+  const normalized = decoded
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+
+  return Array.from(new Set([id, decoded, normalized])).filter(Boolean)
+}
+
 export async function generateStaticParams() {
   if (!isSupabaseConfigured()) {
     console.warn("[v0] Supabase config missing during static generation, falling back to bundled products")
@@ -34,13 +45,19 @@ export async function generateStaticParams() {
 
 async function fetchProduct(id: string) {
   console.log("[v0] ProductPage: Fetching product with ID:", id)
+const idVariants = getIdVariants(id)
+  console.log("[v0] ProductPage: ID variants to try:", idVariants)
 
   if (!isSupabaseConfigured()) {
     console.warn("[v0] fetchProduct: Supabase config missing, using fallback data only")
   } else {
     try {
       const supabase = await createClient()
-      const { data, error } = await supabase.from("products").select("*").eq("id", id).maybeSingle()
+       const query = supabase.from("products").select("*")
+      const { data, error } =
+        idVariants.length === 1
+          ? await query.eq("id", idVariants[0]!).maybeSingle()
+          : await query.or(idVariants.map((variant) => `id.eq.${variant}`).join(",")).maybeSingle()
 
       if (error) {
         console.error("[v0] fetchProduct error:", error)
@@ -59,10 +76,12 @@ async function fetchProduct(id: string) {
 
   }
   
-  const fallbackProduct = allProducts[id]
-  if (fallbackProduct) {
-    console.log("[v0] fetchProduct: Using fallback product:", id)
-    return fallbackProduct
+  for (const variant of idVariants) {
+    const fallbackProduct = allProducts[variant]
+    if (fallbackProduct) {
+      console.log("[v0] fetchProduct: Using fallback product:", variant)
+      return fallbackProduct
+    }
   }
 
   console.error("[v0] fetchProduct: Product not found in Supabase or fallback:", id)
