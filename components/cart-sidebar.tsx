@@ -23,7 +23,7 @@ export function CartSidebar() {
 
   const getTotalPrice = () => {
     return state.items.reduce((total, item) => {
-      const price = Number.parseFloat(item.price.replace("₽", "").replace(",", ""))
+      const price = Number.parseFloat(item.price.replace("AMD", "").replace(",", ""))
       return total + price * item.quantity
     }, 0)
   }
