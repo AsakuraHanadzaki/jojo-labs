@@ -53,7 +53,7 @@ export default function CheckoutPage() {
 
   const getTotalPrice = () => {
     return state.items.reduce((total, item) => {
-      const price = Number.parseFloat(item.price.replace("₽", "").replace(",", ""))
+      const price = Number.parseFloat(item.price.replace("AMD", "").replace(",", ""))
       return total + price * item.quantity
     }, 0)
   }
@@ -95,7 +95,7 @@ export default function CheckoutPage() {
           order_id: order.id,
           product_id: item.id,
           quantity: item.quantity,
-          price: Number.parseFloat(item.price.replace("₽", "").replace(",", "")),
+          price: Number.parseFloat(item.price.replace("AMD", "").replace(",", "")),
         }))
 
         await supabase.from("order_items").insert(orderItems)
@@ -290,9 +290,9 @@ export default function CheckoutPage() {
                       </p>
                     </div>
                     <span className="font-semibold">
-                      ₽
+                      AMD
                       {(
-                        Number.parseFloat(item.price.replace("₽", "").replace(",", "")) * item.quantity
+                        Number.parseFloat(item.price.replace("AMD", "").replace(",", "")) * item.quantity
                       ).toLocaleString()}
                     </span>
                   </div>
@@ -303,11 +303,11 @@ export default function CheckoutPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>{t("checkout.subtotal")}</span>
-                    <span>₽{getTotalPrice().toLocaleString()}</span>
+                    <span>AMD{getTotalPrice().toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>{t("checkout.shipping")}</span>
-                    <span>{getShippingCost() === 0 ? t("checkout.free") : `₽${getShippingCost()}`}</span>
+                    <span>{getShippingCost() === 0 ? t("checkout.free") : `AMD${getShippingCost()}`}</span>
                   </div>
                   {getShippingCost() === 0 && <p className="text-xs text-green-600">{t("checkout.freeshipping")}</p>}
                 </div>
@@ -316,7 +316,7 @@ export default function CheckoutPage() {
 
                 <div className="flex justify-between text-lg font-semibold">
                   <span>{t("checkout.total")}</span>
-                  <span>₽{getFinalTotal().toLocaleString()}</span>
+                  <span>AMD{getFinalTotal().toLocaleString()}</span>
                 </div>
 
                 <Button
