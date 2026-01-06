@@ -22,25 +22,37 @@ const getTranslatedText = (
 ): string => {
   if (language === "ru") {
     const ruField = `${field}_ru`
-    return (product[ruField] as string) || (product[field] as string)
+    return (product[ruField] as string) || (product[field] as string) || ""
   }
   if (language === "hy") {
     const hyField = `${field}_hy`
-    return (product[hyField] as string) || (product[field] as string)
+    return (product[hyField] as string) || (product[field] as string) || ""
   }
-  return product[field] as string
+  return (product[field] as string) || ""
 }
 
 const getTranslatedArray = (product: Record<string, unknown>, field: "skin_type", language: Language): string => {
+  const getValue = (key: string): string => {
+    const value = product[key]
+    if (!value) return ""
+    if (Array.isArray(value)) {
+      return value.join(", ")
+    }
+    if (typeof value === "string") {
+      return value
+    }
+    return String(value)
+  }
+
   if (language === "ru") {
-    const ruField = `${field}_ru`
-    return ((product[ruField] as string[]) || (product[field] as string[]))?.join(", ")
+    const ruValue = getValue(`${field}_ru`)
+    return ruValue || getValue(field)
   }
   if (language === "hy") {
-    const hyField = `${field}_hy`
-    return ((product[hyField] as string[]) || (product[field] as string[]))?.join(", ")
+    const hyValue = getValue(`${field}_hy`)
+    return hyValue || getValue(field)
   }
-  return ((product[field] as string[]) || []).join(", ")
+  return getValue(field)
 }
 
 const normalizeStringArray = (value: unknown): string[] => {
@@ -70,88 +82,87 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    console.log(`[v0] Routine request received with language: ${input.language}`)
+    console.log(`[v0] ========== ROUTINE API REQUEST ==========`)
+    console.log(`[v0] Language requested: ${input.language}`)
 
     let productsMap: ProductMap | undefined
+    let dbProducts: any[] | null = null
+
+    // Step 1: Fetch products from Supabase
     try {
       const supabase = await getSupabaseServerClient()
-      const { data: dbProducts } = await supabase.from("products").select("*").eq("in_stock", true).gt("stock", 0)
+      const { data, error } = await supabase.from("products").select("*").eq("in_stock", true).gt("stock", 0)
 
-      console.log(`[v0] Fetched ${dbProducts?.length || 0} in-stock products from Supabase`)
+      if (error) {
+        console.log(`[v0] Supabase error: ${error.message}`)
+      } else {
+        dbProducts = data
+        console.log(`[v0] Fetched ${dbProducts?.length || 0} in-stock products from Supabase`)
+      }
+    } catch (fetchError: any) {
+      console.log(`[v0] Error fetching products: ${fetchError.message}`)
+    }
 
-      if (dbProducts && dbProducts.length > 0) {
+    // Step 2: Build translated products map if we have data
+    if (dbProducts && dbProducts.length > 0) {
+      try {
         const firstProduct = dbProducts[0]
-        console.log(`[v0] Sample raw product from DB:`)
-        console.log(`[v0]   - id: ${firstProduct.id}`)
-        console.log(`[v0]   - name: ${firstProduct.name}`)
-        console.log(`[v0]   - name_ru: ${firstProduct.name_ru}`)
-        console.log(`[v0]   - name_hy: ${firstProduct.name_hy}`)
-        console.log(`[v0]   - description: ${firstProduct.description?.substring(0, 100)}`)
-        console.log(`[v0]   - description_ru: ${firstProduct.description_ru?.substring(0, 100)}`)
-        console.log(`[v0]   - description_hy: ${firstProduct.description_hy?.substring(0, 100)}`)
+        console.log(`[v0] First product translation fields:`)
+        console.log(`[v0]   - name: "${firstProduct.name}"`)
+        console.log(`[v0]   - name_ru: "${firstProduct.name_ru || "N/A"}"`)
+        console.log(`[v0]   - name_hy: "${firstProduct.name_hy || "N/A"}"`)
+        console.log(`[v0]   - description_hy exists: ${!!firstProduct.description_hy}`)
 
-        productsMap = dbProducts.reduce((acc, p) => {
+        productsMap = {}
+        for (const p of dbProducts) {
           const translatedName = getTranslatedText(p, "name", input.language || "en")
           const translatedDescription = getTranslatedText(p, "description", input.language || "en")
 
-          if (Object.keys(acc).length === 0) {
-            console.log(`[v0] First product translation for language '${input.language}':`)
-            console.log(`[v0]   - Product ID: ${p.id}`)
-            console.log(`[v0]   - Translated name: ${translatedName}`)
-            console.log(`[v0]   - Translated description: ${translatedDescription?.substring(0, 100)}`)
-          }
-
-          acc[p.id] = {
+          productsMap[p.id] = {
             id: p.id,
             name: translatedName,
             category: p.category || p.category_id || "",
-            price: p.price,
-            image: p.image,
+            price: p.price || 0,
+            image: p.image || "",
             description: translatedDescription,
-            brand: p.brand,
-            size: p.size,
-            rating: p.rating,
-            sub_category: p.sub_category,
+            brand: p.brand || "",
+            size: p.size || "",
+            rating: p.rating || 0,
+            sub_category: p.sub_category || "",
             key_ingredients: normalizeStringArray(p.ingredients),
             concerns: normalizeStringArray(p.concerns),
             skin_type: getTranslatedArray(p, "skin_type", input.language || "en"),
           }
-          return acc
-        }, {} as ProductMap)
+        }
+
+        const firstKey = Object.keys(productsMap)[0]
+        if (firstKey) {
+          console.log(`[v0] After translation to "${input.language}":`)
+          console.log(`[v0]   - name: "${productsMap[firstKey].name}"`)
+          console.log(`[v0]   - description: "${(productsMap[firstKey].description || "").substring(0, 50)}..."`)
+        }
+
+        console.log(`[v0] Successfully built productsMap with ${Object.keys(productsMap).length} translated products`)
+      } catch (mapError: any) {
+        console.log(`[v0] Error building products map: ${mapError.message}`)
+        productsMap = undefined
       }
-    } catch (dbError) {
-      console.log("[v0] Using fallback product data for routine")
+    }
+
+    if (productsMap && Object.keys(productsMap).length > 0) {
+      console.log(`[v0] Using TRANSLATED products map for routine (${Object.keys(productsMap).length} products)`)
+    } else {
+      console.log(`[v0] Using FALLBACK product data for routine (no translated map available)`)
     }
 
     const result: RoutineResult = buildRoutine(input, productsMap)
 
-    if (productsMap) {
-      result.recommendedProducts = result.recommendedProducts.map((product) => {
-        const translated = productsMap?.[product.id]
-        if (!translated) return product
-
-        console.log(`[v0] Product ${product.id} translation:`)
-        console.log(`[v0]   - Name: ${translated.name}`)
-        console.log(`[v0]   - Description: ${translated.description?.substring(0, 100)}`)
-
-        return {
-          ...product,
-          name: translated.name || product.name,
-          description: translated.description || product.description,
-        }
-      })
-    }
-
-    console.log(`[v0] Final recommendedProducts being returned to client:`)
+    console.log(`[v0] Recommended products from buildRoutine:`)
     result.recommendedProducts.slice(0, 2).forEach((p) => {
-      console.log(`[v0]   - Product: ${p.name}`)
-      console.log(`[v0]   - Description: ${p.description?.substring(0, 100)}`)
+      console.log(`[v0]   - ${p.id}: "${p.name}" - "${(p.description || "").substring(0, 50)}..."`)
     })
 
-    console.log(`[v0] Routine generated successfully:`)
-    console.log(`[v0]   - AM steps: ${result.AM.length}`)
-    console.log(`[v0]   - PM steps: ${result.PM.length}`)
-    console.log(`[v0]   - Recommended products: ${result.recommendedProducts.length}`)
+    console.log(`[v0] ========== END ROUTINE API ==========`)
 
     return NextResponse.json(result, { status: 200 })
   } catch (err: any) {

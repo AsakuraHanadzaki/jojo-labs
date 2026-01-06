@@ -17,13 +17,6 @@ import type { RoutineResult } from "@/lib/routine-algorithm"
 import { Sun, Moon, Droplets, Sparkles, Shield, Heart } from "lucide-react"
 import { useTranslation } from "@/hooks/use-translation"
 
-interface FollowUpQuestion {
-  id: string
-  question: string
-  options: { [key: string]: string }
-  multi?: boolean
-}
-
 const CONCERN_OPTIONS = [
   { key: "acne", labelKey: "routine.concern.acne" },
   { key: "pores", labelKey: "routine.concern.pores" },
@@ -36,25 +29,105 @@ const CONCERN_OPTIONS = [
   { key: "uneven", labelKey: "routine.concern.uneven" },
 ]
 
-const FOLLOW_UPS: Record<string, FollowUpQuestion> = {
+interface FollowUpQuestionConfig {
+  id: string
+  questionKey: string
+  options: { [key: string]: string }
+  multi?: boolean
+}
+
+interface FollowUpQuestion {
+  id: string
+  question: string
+  options: { [key: string]: string }
+  multi?: boolean
+}
+
+const FOLLOW_UPS: Record<string, FollowUpQuestionConfig> = {
   acne: {
     id: "acne-type",
-    question: "How would you describe your acne?",
-    options: { red: "Inflamed/red bumps", pus: "Pustules (whiteheads with pus)" },
+    questionKey: "routine.followup.acne.question",
+    options: {
+      red: "routine.followup.acne.option.red",
+      pus: "routine.followup.acne.option.pus",
+    },
   },
   pores: {
     id: "pores-severity",
-    question: "How oily does your skin get after washing?",
+    questionKey: "routine.followup.pores.question",
     options: {
-      oneHour: "Very oily after one hour",
-      midday: "Normal until midday then oily",
-      evening: "Fine until evening",
+      oneHour: "routine.followup.pores.option.oneHour",
+      midday: "routine.followup.pores.option.midday",
+      evening: "routine.followup.pores.option.evening",
     },
   },
   pigment: {
     id: "pigment-cause",
-    question: "What causes your dark spots?",
-    options: { sun: "Sun exposure", acne: "Acne scars", unsure: "I'm not sure" },
+    questionKey: "routine.followup.pigment.question",
+    options: {
+      sun: "routine.followup.pigment.option.sun",
+      acne: "routine.followup.pigment.option.acne",
+      unsure: "routine.followup.pigment.option.unsure",
+    },
+  },
+  texture: {
+    id: "texture-type",
+    questionKey: "routine.followup.texture.question",
+    options: {
+      rough: "routine.followup.texture.option.rough",
+      uneven: "routine.followup.texture.option.uneven",
+      flaky: "routine.followup.texture.option.flaky",
+      congested: "routine.followup.texture.option.congested",
+    },
+  },
+  dehydration: {
+    id: "dehydration-severity",
+    questionKey: "routine.followup.dehydration.question",
+    options: {
+      tight: "routine.followup.dehydration.option.tight",
+      dull: "routine.followup.dehydration.option.dull",
+      lines: "routine.followup.dehydration.option.lines",
+      oilyDry: "routine.followup.dehydration.option.oilyDry",
+    },
+  },
+  dryness: {
+    id: "dryness-severity",
+    questionKey: "routine.followup.dryness.question",
+    options: {
+      mild: "routine.followup.dryness.option.mild",
+      moderate: "routine.followup.dryness.option.moderate",
+      severe: "routine.followup.dryness.option.severe",
+    },
+  },
+  aging: {
+    id: "aging-concerns",
+    questionKey: "routine.followup.aging.question",
+    options: {
+      wrinkles: "routine.followup.aging.option.wrinkles",
+      firmness: "routine.followup.aging.option.firmness",
+      dullness: "routine.followup.aging.option.dullness",
+      dark: "routine.followup.aging.option.dark",
+    },
+  },
+  sensitivity: {
+    id: "sensitivity-triggers",
+    questionKey: "routine.followup.sensitivity.question",
+    options: {
+      products: "routine.followup.sensitivity.option.products",
+      weather: "routine.followup.sensitivity.option.weather",
+      stress: "routine.followup.sensitivity.option.stress",
+      unknown: "routine.followup.sensitivity.option.unknown",
+    },
+  },
+  uneven: {
+    id: "uneven-type",
+    questionKey: "routine.followup.uneven.question",
+    options: {
+      tone: "routine.followup.uneven.option.tone",
+      texture: "routine.followup.uneven.option.texture",
+      redness: "routine.followup.uneven.option.redness",
+      dark: "routine.followup.uneven.option.dark",
+    },
   },
 }
 
@@ -108,8 +181,14 @@ export default function RoutineFinderPage() {
     () =>
       concerns
         .map((concern) => FOLLOW_UPS[concern])
-        .filter((question): question is FollowUpQuestion => Boolean(question)),
-    [concerns],
+        .filter((question): question is FollowUpQuestionConfig => Boolean(question))
+        .map((question) => ({
+          id: question.id,
+          question: t(question.questionKey),
+          options: Object.fromEntries(Object.entries(question.options).map(([key, labelKey]) => [key, t(labelKey)])),
+          multi: question.multi,
+        })),
+    [concerns, language, t],
   )
   const totalSteps = followUpQuestions.length > 0 ? 5 : 4
 
