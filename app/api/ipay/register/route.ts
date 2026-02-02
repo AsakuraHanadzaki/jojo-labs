@@ -61,10 +61,15 @@ export async function POST(request: Request) {
       body: params.toString(),
     })
 
-    const data = await response.json()
+    const contentType = response.headers.get("content-type") ?? ""
+    const data = contentType.includes("application/json") ? await response.json() : await response.text()
 
     if (!response.ok) {
       return NextResponse.json({ error: "iPay register failed", details: data }, { status: response.status })
+    }
+
+    if (typeof data !== "object" || !data?.orderId || !data?.formUrl) {
+      return NextResponse.json({ error: "iPay register did not return orderId", details: data }, { status: 502 })
     }
 
     if (data.orderId) {

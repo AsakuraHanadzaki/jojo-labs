@@ -28,7 +28,8 @@ export function IpayCheckoutButton({ orderNumber, amount, currency, language }: 
       const data = await response.json()
 
       if (!response.ok || !data.formUrl) {
-        throw new Error(data?.error || "Unable to start iPay checkout.")
+        const details = data?.details ? ` ${JSON.stringify(data.details)}` : ""
+        throw new Error(`${data?.error || "Unable to start iPay checkout."}${details}`)
       }
 
       window.location.href = data.formUrl
