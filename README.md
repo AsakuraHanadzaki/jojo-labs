@@ -28,3 +28,22 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+## iPay (BPC Arca) Integration
+
+Set the following environment variables in Vercel or your local `.env` file:
+
+```
+IPAY_BASE_URL=https://ipaytest.arca.am:8445/payment/rest/
+IPAY_USERNAME=your-ipay-username
+IPAY_PASSWORD=your-ipay-password
+```
+
+If `IPAY_BASE_URL` is not set, the integration defaults to the test URL.
+
+Switch between test and production by changing `IPAY_BASE_URL`:
+
+- Test: `https://ipaytest.arca.am:8445/payment/rest/`
+- Production: `https://ipay.arca.am/payment/rest/`
+
+The return page verifies payment status against iPay. The demo integration stores the `{orderNumber -> orderId}` mapping in memory, which is not reliable on serverless platforms. Persist this mapping in your database for production use.
