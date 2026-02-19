@@ -296,26 +296,12 @@ export default function CheckoutPage() {
                 </RadioGroup>
 
                 {paymentMethod === "card" && (
-                  <div className="mt-6 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cardNumber">{t("checkout.cardnumber")}</Label>
-                      <Input id="cardNumber" placeholder={t("checkout.cardnumber.placeholder")} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="expiry">{t("checkout.expiry")}</Label>
-                        <Input id="expiry" placeholder={t("checkout.expiry.placeholder")} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cvv">{t("checkout.cvv")}</Label>
-                        <Input id="cvv" placeholder={t("checkout.cvv.placeholder")} />
-                      </div>
-                    </div>
+                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                    <p className="text-sm text-blue-800">
+                      You'll be redirected to Arca's secure payment page to enter your card details.
+                    </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Order Summary */}
           <div className="space-y-8">
