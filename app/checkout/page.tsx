@@ -302,7 +302,10 @@ export default function CheckoutPage() {
                     </p>
                   </div>
                 )}
-
+              </CardContent>
+            </Card>
+          </div>  
+          
           {/* Order Summary */}
           <div className="space-y-8">
             <Card className="rounded-3xl">
