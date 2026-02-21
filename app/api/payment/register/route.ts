@@ -21,40 +21,61 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Debug: Check environment variables are present
-    console.log('[v0] ARCA_API_URL:', process.env.ARCA_API_URL ? 'set' : 'MISSING');
-    console.log('[v0] ARCA_USERNAME:', process.env.ARCA_USERNAME ? 'set' : 'MISSING');
-    console.log('[v0] ARCA_PASSWORD:', process.env.ARCA_PASSWORD ? 'set' : 'MISSING');
-    console.log('[v0] ARCA_RETURN_URL:', process.env.ARCA_RETURN_URL ? 'set' : 'MISSING');
-    console.log('[v0] Registering payment for order:', orderNumber, 'amount:', amount);
+    // Detailed debug logging for Arca request
+    const fullUrl = `${process.env.ARCA_API_URL}register.do`;
+    const requestParams = {
+      userName: process.env.ARCA_USERNAME!,
+      password: process.env.ARCA_PASSWORD!,
+      orderNumber: orderNumber,
+      amount: amount.toString(),
+      currency: '051',
+      returnUrl: `${process.env.ARCA_RETURN_URL}`,
+      description: description || `Order ${orderNumber}`,
+      language: 'en',
+      sessionTimeoutSecs: '1200',
+    };
+
+    console.log('[v0] Arca Request Details:', {
+      url: fullUrl,
+      username: process.env.ARCA_USERNAME,
+      passwordLength: process.env.ARCA_PASSWORD?.length,
+      passwordFirstChar: process.env.ARCA_PASSWORD?.[0],
+      passwordLastChar: process.env.ARCA_PASSWORD?.slice(-1),
+    });
+    console.log('[v0] Arca Environment Variables:', {
+      ARCA_API_URL: process.env.ARCA_API_URL || 'MISSING',
+      ARCA_USERNAME: process.env.ARCA_USERNAME || 'MISSING',
+      ARCA_PASSWORD_SET: process.env.ARCA_PASSWORD ? `YES (${process.env.ARCA_PASSWORD.length} chars)` : 'MISSING',
+      ARCA_RETURN_URL: process.env.ARCA_RETURN_URL || 'MISSING',
+    });
+    console.log('[v0] Arca Request Parameters:', {
+      ...requestParams,
+      password: `[REDACTED - ${requestParams.password?.length} chars]`,
+    });
 
     // Register payment with Arca
-    const arcaResponse = await fetch(
-      `${process.env.ARCA_API_URL}register.do`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          userName: process.env.ARCA_USERNAME!,
-          password: process.env.ARCA_PASSWORD!,
-          orderNumber: orderNumber,
-          amount: amount.toString(), // Amount in minor units (no decimals)
-          currency: '051', // AMD (Armenian Dram)
-          returnUrl: `${process.env.ARCA_RETURN_URL}`,
-          description: description || `Order ${orderNumber}`,
-          language: 'en',
-          sessionTimeoutSecs: '1200', // 20 minutes
-        }),
-      }
-    );
+    const arcaResponse = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams(requestParams),
+    });
 
     const arcaData = await arcaResponse.json();
 
+    // Log full Arca response
+    console.log('[v0] Arca Response Status:', arcaResponse.status);
+    console.log('[v0] Arca Response Headers:', Object.fromEntries(arcaResponse.headers.entries()));
+    console.log('[v0] Arca Response Body:', JSON.stringify(arcaData, null, 2));
+
     // Check for Arca errors
     if (arcaData.errorCode && arcaData.errorCode !== '0' && arcaData.errorCode !== 0) {
-      console.error('Arca registration error:', arcaData);
+      console.error('[v0] Arca registration error:', {
+        errorCode: arcaData.errorCode,
+        errorMessage: arcaData.errorMessage,
+        fullResponse: arcaData,
+      });
       return NextResponse.json(
         { 
           error: arcaData.errorMessage || 'Payment registration failed',
