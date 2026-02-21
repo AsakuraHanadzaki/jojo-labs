@@ -21,6 +21,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Debug: Check environment variables are present
+    console.log('[v0] ARCA_API_URL:', process.env.ARCA_API_URL ? 'set' : 'MISSING');
+    console.log('[v0] ARCA_USERNAME:', process.env.ARCA_USERNAME ? 'set' : 'MISSING');
+    console.log('[v0] ARCA_PASSWORD:', process.env.ARCA_PASSWORD ? 'set' : 'MISSING');
+    console.log('[v0] ARCA_RETURN_URL:', process.env.ARCA_RETURN_URL ? 'set' : 'MISSING');
+    console.log('[v0] Registering payment for order:', orderNumber, 'amount:', amount);
+
     // Register payment with Arca
     const arcaResponse = await fetch(
       `${process.env.ARCA_API_URL}register.do`,
