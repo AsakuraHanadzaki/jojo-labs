@@ -73,11 +73,31 @@ export async function POST(request: NextRequest) {
       sessionTimeoutSecs: requestParams.sessionTimeoutSecs,
     });
 
-    // Log the actual URL-encoded body being sent
-    const encodedBody = new URLSearchParams(requestParams).toString();
-    console.log('[v0] URL-encoded body (password redacted):', encodedBody.replace(/password=[^&]+/, 'password=[REDACTED]'));
+    // Build the URL-encoded body
+    const urlSearchParams = new URLSearchParams(requestParams);
+    const encodedBody = urlSearchParams.toString();
+    
+    // Log the EXACT request being sent
+    console.log('[v0] ===== EXACT REQUEST BEING SENT TO ARCA =====');
+    console.log('[v0] Method: POST');
+    console.log('[v0] Complete URL:', fullUrl);
+    console.log('[v0] Headers:', JSON.stringify({
+      'Content-Type': 'application/x-www-form-urlencoded',
+    }, null, 2));
+    console.log('[v0] Body format: application/x-www-form-urlencoded');
+    console.log('[v0] Body (password redacted):', encodedBody.replace(/password=[^&]+/, 'password=[REDACTED]'));
+    console.log('[v0] Body length:', encodedBody.length, 'bytes');
+    console.log('[v0] Individual URL-encoded params:');
+    for (const [key, value] of urlSearchParams.entries()) {
+      if (key === 'password') {
+        console.log(`[v0]   ${key}=[REDACTED, ${value.length} chars]`);
+      } else {
+        console.log(`[v0]   ${key}=${value}`);
+      }
+    }
+    console.log('[v0] ===== END EXACT REQUEST =====');
 
-    console.log('[v0] Sending POST request to Arca...');
+    console.log('[v0] Sending POST request to Arca now...');
 
     // Register payment with Arca
     const arcaResponse = await fetch(fullUrl, {
@@ -85,11 +105,14 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams(requestParams),
+      body: urlSearchParams,
     });
 
-    console.log('[v0] Arca HTTP Response Status:', arcaResponse.status, arcaResponse.statusText);
-    console.log('[v0] Arca Response Headers:', JSON.stringify(Object.fromEntries(arcaResponse.headers.entries()), null, 2));
+    console.log('[v0] ===== ARCA RESPONSE RECEIVED =====');
+    console.log('[v0] HTTP Status:', arcaResponse.status, arcaResponse.statusText);
+    console.log('[v0] Response OK:', arcaResponse.ok);
+    console.log('[v0] Response URL:', arcaResponse.url);
+    console.log('[v0] Response Headers:', JSON.stringify(Object.fromEntries(arcaResponse.headers.entries()), null, 2));
 
     // Try to get the raw text first for debugging
     const rawResponseText = await arcaResponse.text();
