@@ -93,11 +93,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Construct the exact URL
+    // === TEST MODE: Bypass Arca and return mock response ===
+    const isTestMode = body.testMode === true || request.headers.get('x-test-mode') === 'true';
+    console.log('[v0] Test mode:', isTestMode);
+
+    if (isTestMode) {
+      console.log('[v0] ===== TEST MODE - BYPASSING ARCA =====');
+      const mockOrderId = `test-${Date.now()}`;
+      const mockFormUrl = `${process.env.ARCA_RETURN_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jojolabs.am'}?orderId=${mockOrderId}&testMode=true`;
+
+      // Update order in database with mock data
+      const supabase = await getSupabaseServerClient();
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          arca_order_id: mockOrderId,
+          payment_status: 'pending',
+          arca_payment_status: 0
+        })
+        .eq('order_number', orderNumber);
+
+      if (updateError) {
+        console.error('[v0] TEST MODE - DB update error:', updateError);
+      } else {
+        console.log('[v0] TEST MODE - DB updated successfully for order:', orderNumber);
+      }
+
+      console.log('[v0] TEST MODE - Returning mock response:', { mockOrderId, mockFormUrl });
+      return NextResponse.json({
+        success: true,
+        orderId: mockOrderId,
+        formUrl: mockFormUrl,
+        testMode: true,
+      });
+    }
+
+    // === PRODUCTION MODE: Call Arca API ===
     const fullUrl = `${process.env.ARCA_API_URL}register.do`;
     console.log('[v0] Exact API URL being called:', fullUrl);
 
-    // Build all request parameters (trim env vars to remove hidden chars)
+    // Build request parameters (trim env vars to remove hidden chars)
     const rawUsername = process.env.ARCA_USERNAME || '';
     const rawPassword = process.env.ARCA_PASSWORD || '';
     const rawReturnUrl = process.env.ARCA_RETURN_URL || '';
@@ -112,9 +147,6 @@ export async function POST(request: NextRequest) {
       password_raw_len: rawPassword.length,
       password_clean_len: cleanPassword.length,
       password_changed: rawPassword !== cleanPassword,
-      returnUrl_raw_len: rawReturnUrl.length,
-      returnUrl_clean_len: cleanReturnUrl.length,
-      returnUrl_changed: rawReturnUrl !== cleanReturnUrl,
     });
 
     const requestParams = {
@@ -129,71 +161,32 @@ export async function POST(request: NextRequest) {
       sessionTimeoutSecs: '1200',
     };
 
-    // Log all request parameters (password redacted)
-    console.log('[v0] All request parameters:', {
-      userName: requestParams.userName,
-      password: `[REDACTED - ${requestParams.password?.length || 0} chars, first="${requestParams.password?.[0]}", last="${requestParams.password?.slice(-1)}"]`,
-      orderNumber: requestParams.orderNumber,
-      amount: requestParams.amount,
-      currency: requestParams.currency,
-      returnUrl: requestParams.returnUrl,
-      description: requestParams.description,
-      language: requestParams.language,
-      sessionTimeoutSecs: requestParams.sessionTimeoutSecs,
+    console.log('[v0] Request parameters (password redacted):', {
+      ...requestParams,
+      password: `[REDACTED - ${cleanPassword.length} chars]`,
     });
 
-    // Build the URL-encoded body
     const urlSearchParams = new URLSearchParams(requestParams);
-    const encodedBody = urlSearchParams.toString();
-    
-    // Log the EXACT request being sent
-    console.log('[v0] ===== EXACT REQUEST BEING SENT TO ARCA =====');
-    console.log('[v0] Method: POST');
-    console.log('[v0] Complete URL:', fullUrl);
-    console.log('[v0] Headers:', JSON.stringify({
-      'Content-Type': 'application/x-www-form-urlencoded',
-    }, null, 2));
-    console.log('[v0] Body format: application/x-www-form-urlencoded');
-    console.log('[v0] Body (password redacted):', encodedBody.replace(/password=[^&]+/, 'password=[REDACTED]'));
-    console.log('[v0] Body length:', encodedBody.length, 'bytes');
-    console.log('[v0] Individual URL-encoded params:');
-    for (const [key, value] of urlSearchParams.entries()) {
-      if (key === 'password') {
-        console.log(`[v0]   ${key}=[REDACTED, ${value.length} chars]`);
-      } else {
-        console.log(`[v0]   ${key}=${value}`);
-      }
-    }
-    console.log('[v0] ===== END EXACT REQUEST =====');
 
-    console.log('[v0] Sending POST request to Arca now...');
+    console.log('[v0] Sending POST to Arca:', fullUrl);
 
     // Register payment with Arca
     const arcaResponse = await fetch(fullUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: urlSearchParams,
     });
 
-    console.log('[v0] ===== ARCA RESPONSE RECEIVED =====');
-    console.log('[v0] HTTP Status:', arcaResponse.status, arcaResponse.statusText);
-    console.log('[v0] Response OK:', arcaResponse.ok);
-    console.log('[v0] Response URL:', arcaResponse.url);
-    console.log('[v0] Response Headers:', JSON.stringify(Object.fromEntries(arcaResponse.headers.entries()), null, 2));
+    console.log('[v0] Arca Response Status:', arcaResponse.status, arcaResponse.statusText);
 
-    // Try to get the raw text first for debugging
     const rawResponseText = await arcaResponse.text();
-    console.log('[v0] Arca Raw Response Body:', rawResponseText);
+    console.log('[v0] Arca Raw Response:', rawResponseText);
 
-    // Parse the response as JSON
     let arcaData;
     try {
       arcaData = JSON.parse(rawResponseText);
-    } catch (parseError) {
-      console.error('[v0] Failed to parse Arca response as JSON:', parseError);
-      console.error('[v0] Raw response was:', rawResponseText);
+    } catch {
+      console.error('[v0] Failed to parse Arca response:', rawResponseText);
       return NextResponse.json(
         { error: 'Invalid response from payment gateway', rawResponse: rawResponseText },
         { status: 502 }
@@ -202,27 +195,15 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Arca Parsed Response:', JSON.stringify(arcaData, null, 2));
 
-    // Check for Arca errors
     if (arcaData.errorCode && arcaData.errorCode !== '0' && arcaData.errorCode !== 0) {
-      console.error('[v0] ARCA ERROR - Registration failed:', {
-        errorCode: arcaData.errorCode,
-        errorMessage: arcaData.errorMessage,
-        orderId: arcaData.orderId,
-        fullResponse: arcaData,
-      });
+      console.error('[v0] ARCA ERROR:', arcaData);
       return NextResponse.json(
-        { 
-          error: arcaData.errorMessage || 'Payment registration failed',
-          errorCode: arcaData.errorCode 
-        },
+        { error: arcaData.errorMessage || 'Payment registration failed', errorCode: arcaData.errorCode },
         { status: 400 }
       );
     }
 
-    console.log('[v0] ARCA SUCCESS - Payment registered:', {
-      orderId: arcaData.orderId,
-      formUrl: arcaData.formUrl,
-    });
+    console.log('[v0] ARCA SUCCESS:', { orderId: arcaData.orderId, formUrl: arcaData.formUrl });
 
     // Update order with Arca order ID
     const supabase = await getSupabaseServerClient();
