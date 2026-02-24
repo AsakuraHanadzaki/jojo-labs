@@ -2,23 +2,73 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
+  // === HELPER: Detect hidden characters and encoding issues ===
+  function inspectString(label: string, value: string | undefined) {
+    if (!value) {
+      console.log(`[v0] ${label}: MISSING/UNDEFINED`);
+      return;
+    }
+    const trimmed = value.trim();
+    const hasLeadingSpace = value !== value.trimStart();
+    const hasTrailingSpace = value !== value.trimEnd();
+    const hasNewline = /[\r\n]/.test(value);
+    const hasTab = /\t/.test(value);
+    const hasNonASCII = /[^\x20-\x7E]/.test(value);
+    const hasNullByte = /\0/.test(value);
+    const hasQuotes = /^["']|["']$/.test(value);
+    const charCodes = Array.from(value).map(c => c.charCodeAt(0));
+    const byteLength = new TextEncoder().encode(value).length;
+
+    console.log(`[v0] ${label}:`, {
+      value_length: value.length,
+      byte_length: byteLength,
+      trimmed_length: trimmed.length,
+      has_leading_space: hasLeadingSpace,
+      has_trailing_space: hasTrailingSpace,
+      has_newline: hasNewline,
+      has_tab: hasTab,
+      has_non_ascii: hasNonASCII,
+      has_null_byte: hasNullByte,
+      has_surrounding_quotes: hasQuotes,
+      first_3_char_codes: charCodes.slice(0, 3),
+      last_3_char_codes: charCodes.slice(-3),
+      first_char: JSON.stringify(value[0]),
+      last_char: JSON.stringify(value[value.length - 1]),
+      value_preview: label.includes('PASSWORD') 
+        ? `[REDACTED ${value.length} chars]` 
+        : value.length > 50 ? value.slice(0, 25) + '...' + value.slice(-25) : value,
+    });
+
+    if (hasLeadingSpace || hasTrailingSpace || hasNewline || hasTab || hasNonASCII || hasNullByte || hasQuotes) {
+      console.warn(`[v0] WARNING: ${label} has encoding issues!`, {
+        hasLeadingSpace,
+        hasTrailingSpace,
+        hasNewline,
+        hasTab,
+        hasNonASCII,
+        hasNullByte,
+        hasQuotes,
+        all_char_codes: label.includes('PASSWORD') ? '[REDACTED]' : charCodes,
+      });
+    }
+  }
+
   // === LOG ALL ENVIRONMENT VARIABLES AT START ===
   console.log('[v0] ========== PAYMENT REGISTER API CALLED ==========');
+  
+  // Inspect each env var for hidden characters
+  inspectString('ARCA_API_URL', process.env.ARCA_API_URL);
+  inspectString('ARCA_USERNAME', process.env.ARCA_USERNAME);
+  inspectString('ARCA_PASSWORD', process.env.ARCA_PASSWORD);
+  inspectString('ARCA_RETURN_URL', process.env.ARCA_RETURN_URL);
+
   console.log('[v0] ALL PAYMENT ENV VARS:', {
-    // Arca variables
     ARCA_API_URL: process.env.ARCA_API_URL || 'MISSING',
     ARCA_USERNAME: process.env.ARCA_USERNAME || 'MISSING',
     ARCA_PASSWORD: process.env.ARCA_PASSWORD 
       ? `SET (${process.env.ARCA_PASSWORD.length} chars, first="${process.env.ARCA_PASSWORD[0]}", last="${process.env.ARCA_PASSWORD.slice(-1)}")`
       : 'MISSING',
     ARCA_RETURN_URL: process.env.ARCA_RETURN_URL || 'MISSING',
-    // iPay variables
-    IPAY_BASE_URL: process.env.IPAY_BASE_URL || 'MISSING',
-    IPAY_USERNAME: process.env.IPAY_USERNAME || 'MISSING',
-    IPAY_PASSWORD: process.env.IPAY_PASSWORD 
-      ? `SET (${process.env.IPAY_PASSWORD.length} chars, first="${process.env.IPAY_PASSWORD[0]}", last="${process.env.IPAY_PASSWORD.slice(-1)}")`
-      : 'MISSING',
-    IPAY_RETURN_URL: process.env.IPAY_RETURN_URL || 'MISSING',
   });
 
   try {
@@ -47,14 +97,33 @@ export async function POST(request: NextRequest) {
     const fullUrl = `${process.env.ARCA_API_URL}register.do`;
     console.log('[v0] Exact API URL being called:', fullUrl);
 
-    // Build all request parameters
+    // Build all request parameters (trim env vars to remove hidden chars)
+    const rawUsername = process.env.ARCA_USERNAME || '';
+    const rawPassword = process.env.ARCA_PASSWORD || '';
+    const rawReturnUrl = process.env.ARCA_RETURN_URL || '';
+    const cleanUsername = rawUsername.trim().replace(/[\r\n\t\0]/g, '');
+    const cleanPassword = rawPassword.trim().replace(/[\r\n\t\0]/g, '');
+    const cleanReturnUrl = rawReturnUrl.trim().replace(/[\r\n\t\0]/g, '');
+
+    console.log('[v0] Cleaned credentials:', {
+      username_raw_len: rawUsername.length,
+      username_clean_len: cleanUsername.length,
+      username_changed: rawUsername !== cleanUsername,
+      password_raw_len: rawPassword.length,
+      password_clean_len: cleanPassword.length,
+      password_changed: rawPassword !== cleanPassword,
+      returnUrl_raw_len: rawReturnUrl.length,
+      returnUrl_clean_len: cleanReturnUrl.length,
+      returnUrl_changed: rawReturnUrl !== cleanReturnUrl,
+    });
+
     const requestParams = {
-      userName: process.env.ARCA_USERNAME!,
-      password: process.env.ARCA_PASSWORD!,
+      userName: cleanUsername,
+      password: cleanPassword,
       orderNumber: orderNumber,
       amount: amount.toString(),
       currency: '051',
-      returnUrl: `${process.env.ARCA_RETURN_URL}`,
+      returnUrl: cleanReturnUrl,
       description: description || `Order ${orderNumber}`,
       language: 'en',
       sessionTimeoutSecs: '1200',
