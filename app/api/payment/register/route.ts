@@ -176,6 +176,40 @@ export async function POST(request: NextRequest) {
       password_changed: rawPassword !== cleanPassword,
     });
 
+    // === VALIDATE AGAINST ARCA API SPEC ===
+    // Per official iPay Merchant Manual (Armenian Card CJSC):
+    //   URL: https://ipay.arca.am/payment/rest/register.do (production)
+    //   URL: https://ipaytest.arca.am:8445/payment/rest/register.do (test)
+    //   Required params: userName (AN..30), password (AN..30), orderNumber (AN..32), amount (N..20), returnUrl (AN..512)
+    //   Optional params: currency (N3), description (AN..1024), language (A2), pageView (A..7), sessionTimeoutSecs (N..9)
+    //   Content-Type: application/x-www-form-urlencoded
+    //   Error code 5 meanings: "Unknown merchant name" / "Access denied" / "User disabled"
+    
+    console.log('[v0] ===== ARCA SPEC VALIDATION =====');
+    
+    // Validate URL matches known Arca endpoints
+    const knownProdUrl = 'https://ipay.arca.am/payment/rest/register.do';
+    const knownTestUrl = 'https://ipaytest.arca.am:8445/payment/rest/register.do';
+    const urlMatchesProd = fullUrl === knownProdUrl;
+    const urlMatchesTest = fullUrl === knownTestUrl;
+    console.log('[v0] URL matches production endpoint:', urlMatchesProd, `(expected: ${knownProdUrl})`);
+    console.log('[v0] URL matches test endpoint:', urlMatchesTest, `(expected: ${knownTestUrl})`);
+    if (!urlMatchesProd && !urlMatchesTest) {
+      console.warn('[v0] WARNING: URL does not match any known Arca endpoint!');
+      console.warn('[v0] Actual URL:', fullUrl);
+    }
+    
+    // Validate parameter constraints per spec
+    console.log('[v0] Param validation:', {
+      userName_length: cleanUsername.length, userName_maxLength: 30, userName_ok: cleanUsername.length > 0 && cleanUsername.length <= 30,
+      password_length: cleanPassword.length, password_maxLength: 30, password_ok: cleanPassword.length > 0 && cleanPassword.length <= 30,
+      orderNumber_length: orderNumber.length, orderNumber_maxLength: 32, orderNumber_ok: orderNumber.length > 0 && orderNumber.length <= 32,
+      amount_value: amount.toString(), amount_isNumeric: /^\d+$/.test(amount.toString()), amount_note: 'Must be in minor currency units (luma for AMD)',
+      currency_value: '051', currency_note: 'AMD = 051 per ISO 4217',
+      returnUrl_length: cleanReturnUrl.length, returnUrl_maxLength: 512, returnUrl_ok: cleanReturnUrl.length > 0 && cleanReturnUrl.length <= 512,
+    });
+    console.log('[v0] ===== END SPEC VALIDATION =====');
+
     const requestParams = {
       userName: cleanUsername,
       password: cleanPassword,
@@ -193,7 +227,12 @@ export async function POST(request: NextRequest) {
       password: `[REDACTED - ${cleanPassword.length} chars]`,
     });
 
+    // Build URL-encoded body and verify format
     const urlSearchParams = new URLSearchParams(requestParams);
+    const encodedBody = urlSearchParams.toString();
+    console.log('[v0] Content-Type: application/x-www-form-urlencoded');
+    console.log('[v0] Encoded body (password redacted):', encodedBody.replace(/password=[^&]+/, 'password=[REDACTED]'));
+    console.log('[v0] Body is properly URL-encoded:', encodedBody.includes('userName=') && encodedBody.includes('&orderNumber='));
 
     console.log('[v0] Sending POST to Arca:', fullUrl);
 
