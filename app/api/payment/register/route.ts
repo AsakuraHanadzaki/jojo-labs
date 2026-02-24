@@ -129,8 +129,35 @@ export async function POST(request: NextRequest) {
     }
 
     // === PRODUCTION MODE: Call Arca API ===
-    const fullUrl = `${process.env.ARCA_API_URL}register.do`;
-    console.log('[v0] Exact API URL being called:', fullUrl);
+    // URL construction debugging
+    const rawArcaUrl = process.env.ARCA_API_URL || '';
+    const hasTrailingSlash = rawArcaUrl.endsWith('/');
+    const hasDoubleSlash = rawArcaUrl.includes('//') && rawArcaUrl.indexOf('//') !== rawArcaUrl.indexOf('://');
+    // Normalize: ensure exactly one trailing slash before appending endpoint
+    const normalizedBaseUrl = rawArcaUrl.replace(/\/+$/, '') + '/';
+    const fullUrl = `${normalizedBaseUrl}register.do`;
+
+    console.log('[v0] ===== URL CONSTRUCTION =====');
+    console.log('[v0] Raw ARCA_API_URL value:', JSON.stringify(rawArcaUrl));
+    console.log('[v0] Raw URL char codes (last 5):', Array.from(rawArcaUrl.slice(-5)).map(c => `${c}=${c.charCodeAt(0)}`));
+    console.log('[v0] Has trailing slash:', hasTrailingSlash);
+    console.log('[v0] Has unexpected double slash:', hasDoubleSlash);
+    console.log('[v0] Normalized base URL:', normalizedBaseUrl);
+    console.log('[v0] Final constructed URL:', fullUrl);
+    
+    // Validate URL format
+    try {
+      const parsedUrl = new URL(fullUrl);
+      console.log('[v0] Parsed URL:', {
+        protocol: parsedUrl.protocol,
+        host: parsedUrl.host,
+        pathname: parsedUrl.pathname,
+        full: parsedUrl.toString(),
+      });
+    } catch (urlError) {
+      console.error('[v0] INVALID URL constructed:', fullUrl, urlError);
+    }
+    console.log('[v0] ===== END URL CONSTRUCTION =====');
 
     // Build request parameters (trim env vars to remove hidden chars)
     const rawUsername = process.env.ARCA_USERNAME || '';
