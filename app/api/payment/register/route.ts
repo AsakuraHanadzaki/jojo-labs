@@ -236,6 +236,9 @@ export async function POST(request: NextRequest) {
 
     console.log('[v0] Sending POST to Arca:', fullUrl);
 
+    // Track request timing
+    const requestStartTime = Date.now();
+
     // Register payment with Arca
     const arcaResponse = await fetch(fullUrl, {
       method: 'POST',
@@ -243,26 +246,89 @@ export async function POST(request: NextRequest) {
       body: urlSearchParams,
     });
 
-    console.log('[v0] Arca Response Status:', arcaResponse.status, arcaResponse.statusText);
+    const requestDuration = Date.now() - requestStartTime;
 
+    // === LOG ABSOLUTELY EVERYTHING FROM ARCA RESPONSE ===
+    console.log('[v0] ===== ARCA FULL RESPONSE DUMP =====');
+    console.log('[v0] Response timing:', requestDuration, 'ms');
+    console.log('[v0] HTTP status code:', arcaResponse.status);
+    console.log('[v0] HTTP status text:', arcaResponse.statusText);
+    console.log('[v0] Response OK:', arcaResponse.ok);
+    console.log('[v0] Response type:', arcaResponse.type);
+    console.log('[v0] Response URL (after redirects):', arcaResponse.url);
+    console.log('[v0] Was redirected:', arcaResponse.redirected);
+
+    // Log ALL response headers
+    console.log('[v0] === ALL RESPONSE HEADERS ===');
+    const allHeaders: Record<string, string> = {};
+    arcaResponse.headers.forEach((value, key) => {
+      allHeaders[key] = value;
+      console.log(`[v0]   ${key}: ${value}`);
+    });
+    console.log('[v0] Headers as JSON:', JSON.stringify(allHeaders, null, 2));
+
+    // Get raw response body
     const rawResponseText = await arcaResponse.text();
-    console.log('[v0] Arca Raw Response:', rawResponseText);
+    console.log('[v0] === RAW RESPONSE BODY ===');
+    console.log('[v0] Body length:', rawResponseText.length, 'chars');
+    console.log('[v0] Body byte length:', new TextEncoder().encode(rawResponseText).length, 'bytes');
+    console.log('[v0] Body content:', rawResponseText);
+    console.log('[v0] Body first 500 chars:', rawResponseText.slice(0, 500));
+    console.log('[v0] Body char codes (first 50):', Array.from(rawResponseText.slice(0, 50)).map(c => c.charCodeAt(0)));
+
+    // Check if response is HTML (error page) instead of JSON
+    const isHtml = rawResponseText.trim().startsWith('<') || rawResponseText.includes('<!DOCTYPE') || rawResponseText.includes('<html');
+    const isJson = rawResponseText.trim().startsWith('{') || rawResponseText.trim().startsWith('[');
+    console.log('[v0] Response appears to be HTML:', isHtml);
+    console.log('[v0] Response appears to be JSON:', isJson);
+
+    if (isHtml) {
+      console.error('[v0] ARCA RETURNED HTML INSTEAD OF JSON - likely an error page or wrong URL');
+      console.error('[v0] HTML content:', rawResponseText.slice(0, 1000));
+      return NextResponse.json(
+        { error: 'Payment gateway returned HTML instead of JSON - check API URL', htmlSnippet: rawResponseText.slice(0, 500) },
+        { status: 502 }
+      );
+    }
 
     let arcaData;
     try {
       arcaData = JSON.parse(rawResponseText);
-    } catch {
-      console.error('[v0] Failed to parse Arca response:', rawResponseText);
+    } catch (parseErr) {
+      console.error('[v0] Failed to parse Arca response as JSON');
+      console.error('[v0] Parse error:', (parseErr as Error).message);
+      console.error('[v0] Raw response was:', rawResponseText);
       return NextResponse.json(
         { error: 'Invalid response from payment gateway', rawResponse: rawResponseText },
         { status: 502 }
       );
     }
 
-    console.log('[v0] Arca Parsed Response:', JSON.stringify(arcaData, null, 2));
+    console.log('[v0] Parsed JSON response:', JSON.stringify(arcaData, null, 2));
+    console.log('[v0] All response keys:', Object.keys(arcaData));
+    console.log('[v0] All response values:', Object.entries(arcaData).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(', '));
+    console.log('[v0] ===== END ARCA FULL RESPONSE DUMP =====');
 
     if (arcaData.errorCode && arcaData.errorCode !== '0' && arcaData.errorCode !== 0) {
-      console.error('[v0] ARCA ERROR:', arcaData);
+      console.error('[v0] ===== ARCA ERROR DETAILS =====');
+      console.error('[v0] Error code:', arcaData.errorCode, '(type:', typeof arcaData.errorCode, ')');
+      console.error('[v0] Error message:', arcaData.errorMessage);
+      console.error('[v0] Order ID (if any):', arcaData.orderId);
+      console.error('[v0] All error fields:', JSON.stringify(arcaData, null, 2));
+      console.error('[v0] Error code meaning per Arca spec:');
+      const errorMeanings: Record<string, string> = {
+        '1': 'Order number already registered',
+        '3': 'Unknown currency',
+        '4': 'Missing required parameter',
+        '5': 'Access denied / Unknown merchant / User disabled',
+        '6': 'Unrecognized payment type',
+        '7': 'Invalid amount',
+        '14': 'Duplicate orderNumber',
+      };
+      console.error('[v0]   Code', arcaData.errorCode, '=', errorMeanings[String(arcaData.errorCode)] || 'Unknown error code');
+      console.error('[v0] Response timing was:', requestDuration, 'ms');
+      console.error('[v0] Request URL was:', fullUrl);
+      console.error('[v0] ===== END ARCA ERROR DETAILS =====');
       return NextResponse.json(
         { error: arcaData.errorMessage || 'Payment registration failed', errorCode: arcaData.errorCode },
         { status: 400 }
