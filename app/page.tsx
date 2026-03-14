@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { Sparkles, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -13,17 +12,15 @@ import type { Product } from "@/lib/supabase/types"
 import { useEffect, useState } from "react"
 
 function ProductImage({ product, language }: { product: Product; language: string }) {
-  const [imgError, setImgError] = useState(false)
-  const imageUrl = imgError ? "/placeholder.svg" : (product.image || "/placeholder.svg")
+  const [imgSrc, setImgSrc] = useState(product.image || "/placeholder.svg")
   
   return (
-    <Image
-      src={imageUrl}
+    <img
+      src={imgSrc}
       alt={getTranslatedField(product, "name", language)}
-      fill
-      className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-      onError={() => setImgError(true)}
-      unoptimized
+      className="absolute inset-0 w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+      onError={() => setImgSrc("/placeholder.svg")}
+      loading="lazy"
     />
   )
 }
