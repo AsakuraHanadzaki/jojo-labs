@@ -13,13 +13,25 @@ import { useEffect, useState } from "react"
 
 function ProductImage({ product, language }: { product: Product; language: string }) {
   const [imgSrc, setImgSrc] = useState(product.image || "/placeholder.svg")
+  const [hasError, setHasError] = useState(false)
+
+  // Update when product.image changes
+  useEffect(() => {
+    if (product.image && product.image !== "/placeholder.svg") {
+      setImgSrc(product.image)
+      setHasError(false)
+    }
+  }, [product.image])
   
   return (
     <img
-      src={imgSrc}
+      src={hasError ? "/placeholder.svg" : imgSrc}
       alt={getTranslatedField(product, "name", language)}
       className="absolute inset-0 w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-      onError={() => setImgSrc("/placeholder.svg")}
+      onError={() => {
+        setHasError(true)
+        setImgSrc("/placeholder.svg")
+      }}
       loading="lazy"
     />
   )
