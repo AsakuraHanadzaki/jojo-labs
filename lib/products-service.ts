@@ -22,6 +22,10 @@ export async function fetchProducts(category?: string): Promise<Product[]> {
     }
 
     console.log("[v0] fetchProducts: Successfully fetched", data?.length || 0, "products")
+    // Debug: Log image URLs to verify they're coming from database
+    if (data) {
+      data.forEach(p => console.log("[v0] Product:", p.name, "| Image:", p.image))
+    }
     return data || []
   } catch (error) {
     console.log("[v0] fetchProducts: Using fallback data")
