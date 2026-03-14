@@ -38,6 +38,8 @@ import {
   Edit,
   EyeOff,
   Trash2,
+  Upload,
+  ImageIcon,
 } from "lucide-react"
 import type { Product, Order, CustomerRequest, ProductRating } from "@/lib/supabase/types"
 import Link from "next/link"
@@ -80,8 +82,43 @@ export default function AdminPage() {
   const [orderFilter, setOrderFilter] = useState("all")
   const [requestFilter, setRequestFilter] = useState("all")
   const [ratingFilter, setRatingFilter] = useState("all")
+  
+  // Image upload states
+  const [uploadingProductId, setUploadingProductId] = useState<string | null>(null)
 
   const supabase = getSupabaseBrowserClient()
+
+  // Upload product image
+  const handleImageUpload = async (productId: string, file: File) => {
+    setUploadingProductId(productId)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('productId', productId)
+
+      const response = await fetch('/api/upload-product-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Update local state with new image URL
+        setProducts(products.map(p => 
+          p.id === productId ? { ...p, image: result.url } : p
+        ))
+        alert('Image uploaded successfully!')
+      } else {
+        alert('Failed to upload image: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload image')
+    } finally {
+      setUploadingProductId(null)
+    }
+  }
 
   // Verify admin code
   const handleLogin = async () => {
@@ -464,13 +501,14 @@ export default function AdminPage() {
           <TabsContent value="products">
             <Card>
               <CardHeader>
-                <CardTitle>Stock Management</CardTitle>
-                <CardDescription>Manage product inventory levels</CardDescription>
+                <CardTitle>Product Management</CardTitle>
+                <CardDescription>Manage product inventory and images</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-24">Image</TableHead>
                       <TableHead>Product</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Price</TableHead>
@@ -482,9 +520,46 @@ export default function AdminPage() {
                   <TableBody>
                     {products.map((product) => (
                       <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell>
+                          <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden group">
+                            {product.image && product.image !== '/placeholder.svg' ? (
+                              <img 
+                                src={product.image} 
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/placeholder.svg'
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ImageIcon className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                            <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                              {uploadingProductId === product.id ? (
+                                <RefreshCw className="w-5 h-5 text-white animate-spin" />
+                              ) : (
+                                <Upload className="w-5 h-5 text-white" />
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) handleImageUpload(product.id, file)
+                                }}
+                                disabled={uploadingProductId === product.id}
+                              />
+                            </label>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium max-w-48">
+                          <div className="truncate" title={product.name}>{product.name}</div>
+                        </TableCell>
                         <TableCell>{product.category_id}</TableCell>
-                        <TableCell>${product.price}</TableCell>
+                        <TableCell>{product.price} AMD</TableCell>
                         <TableCell>
                           <Input
                             type="number"
