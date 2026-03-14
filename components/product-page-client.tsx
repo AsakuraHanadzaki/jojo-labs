@@ -46,6 +46,7 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
   const { toast } = useToast()
   const [quantity, setQuantity] = useState(1)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [imgError, setImgError] = useState(false)
   const [stockStatus] = useState({
     inStock: product.in_stock ?? product.inStock ?? true,
     stock: product.stock ?? 100,
@@ -194,10 +195,12 @@ export default function ProductPageClient({ product, productId }: ProductPageCli
             {/* Product Image */}
             <div className="relative aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-gradient-to-br from-rose-50 to-pink-50">
               <Image
-                src={product.image || "/placeholder.svg"}
+                src={imgError ? "/placeholder.svg" : (product.image || "/placeholder.svg")}
                 alt={productName}
                 fill
                 className="object-contain p-4 sm:p-8"
+                onError={() => setImgError(true)}
+                unoptimized
               />
               {/* Stock Badge */}
               {isOutOfStock ? (

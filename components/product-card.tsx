@@ -1,5 +1,8 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -26,6 +29,8 @@ export function ProductCard({
   inStock = true,
   lowStockThreshold = 10,
 }: ProductCardProps) {
+  const [imgError, setImgError] = useState(false)
+  const [imgSrc, setImgSrc] = useState(image || "/placeholder.svg")
   const getStockStatus = () => {
     const currentStock = stock ?? 0
 
@@ -46,11 +51,16 @@ export function ProductCard({
         <CardContent className="p-0">
           <div className="relative aspect-square bg-gradient-to-br from-rose-50 to-pink-100 rounded-3xl overflow-hidden mb-4">
             <Image
-              src={image || "/placeholder.svg"}
+              src={imgError ? "/placeholder.svg" : imgSrc}
               alt={name}
               width={300}
               height={300}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={() => {
+                setImgError(true)
+                setImgSrc("/placeholder.svg")
+              }}
+              unoptimized
             />
             <Badge variant="outline" className={`absolute top-3 right-3 ${stockStatus.color} text-xs font-medium`}>
               {stockStatus.label}
