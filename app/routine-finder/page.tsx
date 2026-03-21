@@ -190,7 +190,7 @@ export default function RoutineFinderPage() {
         })),
     [concerns, language, t],
   )
-  const totalSteps = followUpQuestions.length > 0 ? 5 : 4
+  const totalSteps = 5
 
   useEffect(() => {
     setStep(1)
