@@ -83,7 +83,12 @@ export async function POST(req: Request) {
     }
 
     console.log(`[v0] ========== ROUTINE API REQUEST ==========`)
-    console.log(`[v0] Language requested: ${input.language}`)
+    console.log(`[v0] User input:`)
+    console.log(`[v0]   - Skin type: ${input.skinType}`)
+    console.log(`[v0]   - Concerns: ${input.concerns}`)
+    console.log(`[v0]   - Age: ${input.age}`)
+    console.log(`[v0]   - Routine: ${input.routine}`)
+    console.log(`[v0]   - Language: ${input.language}`)
 
     let productsMap: ProductMap | undefined
     let dbProducts: any[] | null = null
@@ -143,6 +148,14 @@ export async function POST(req: Request) {
         }
 
         console.log(`[v0] Successfully built productsMap with ${Object.keys(productsMap).length} translated products`)
+        
+        // Log products with their concerns for debugging
+        console.log(`[v0] Products with concerns matching user's issues:`)
+        Object.values(productsMap).forEach(p => {
+          if (p.concerns && p.concerns.length > 0) {
+            console.log(`[v0]   - ${p.name}: ${p.concerns.join(", ")}`)
+          }
+        })
       } catch (mapError: any) {
         console.log(`[v0] Error building products map: ${mapError.message}`)
         productsMap = undefined
