@@ -1,5 +1,6 @@
 "use client"
 
+// Homepage - Updated March 2026
 import Link from "next/link"
 import { Sparkles, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"

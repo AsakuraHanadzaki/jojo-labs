@@ -1,5 +1,6 @@
 "use client"
 
+// Admin panel - Updated March 2026 - Added price editing and product management
 import { useState, useEffect } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"

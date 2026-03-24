@@ -1,5 +1,6 @@
 "use client"
 
+// About page - Updated March 2026
 import Image from "next/image"
 import Link from "next/link"
 import { Truck, Eye, Heart, Award } from "lucide-react"

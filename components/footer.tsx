@@ -1,5 +1,6 @@
 "use client"
 
+// Footer component - Updated March 2026
 import Link from "next/link"
 import Image from "next/image"
 import { useTranslation } from "@/hooks/use-translation"
