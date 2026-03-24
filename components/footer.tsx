@@ -72,11 +72,6 @@ export function Footer() {
                   {t("footer.tiktok")}
                 </a>
               </li>
-              <li>
-                <a href="https://t.me/jojolabsam" className="hover:text-gray-900">
-                  {t("footer.telegram")}
-                </a>
-              </li>
             </ul>
           </div>
         </div>
