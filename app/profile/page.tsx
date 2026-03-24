@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { User, Package, Heart, ChevronDown, ChevronUp, Star, CheckCircle } from "lucide-react"
+import { User, Package, Heart, ChevronDown, ChevronUp, CheckCircle } from "lucide-react"
 import Image from "next/image"
 import { ProductRatingDialog } from "@/components/product-rating-dialog"
 
@@ -73,7 +73,6 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("")
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
   const [userRatings, setUserRatings] = useState<ProductRating[]>([])
-  const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!loading && !user) {
