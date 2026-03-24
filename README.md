@@ -41,6 +41,8 @@ IPAY_PASSWORD=your-ipay-password
 
 Switch between test and production by changing `IPAY_BASE_URL`:
 
+There is at times Issues between v0.dev branch and the main one ensure you solve that:
+
 - Test: `https://ipaytest.arca.am:8445/payment/rest/`
 - Production: `https://ipay.arca.am/payment/rest/`
 
