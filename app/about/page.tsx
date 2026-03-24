@@ -33,13 +33,13 @@ export default function AboutPage() {
                 <p>{t("about.story.p3")}</p>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-rose-100 to-pink-200 rounded-3xl p-8">
+            <div className="rounded-3xl overflow-hidden">
               <Image
-                src="/images/design-mode/Bober%20and%20Panda%20short.png"
-                alt="Mascots"
-                width={400}
-                height={400}
-                className="w-full h-full object-cover rounded-2xl"
+                src="/images/team-photo.png"
+                alt="JoJo Labs Team"
+                width={500}
+                height={350}
+                className="w-full h-full object-cover"
               />
             </div>
           </div>
