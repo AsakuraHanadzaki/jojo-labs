@@ -84,6 +84,27 @@ export const translations = {
     "product.addressesconcerns": "This product addresses these concerns",
     "product.targetedconcerns": "Concerns", // Add targetedconcerns translation for English
 
+    // Ratings
+    "rating.rateProduct": "Rate Product",
+    "rating.yourRating": "Your Rating",
+    "rating.selectRating": "Please select a rating",
+    "rating.reviewTitle": "Review Title",
+    "rating.titlePlaceholder": "Summarize your experience",
+    "rating.yourReview": "Your Review",
+    "rating.reviewPlaceholder": "Tell us about your experience with this product...",
+    "rating.yourName": "Your Name",
+    "rating.namePlaceholder": "How should we display your name?",
+    "rating.submitRating": "Submit Rating",
+    "rating.rated": "Rated",
+    "rating.deliveredNote": "You can rate products from delivered orders",
+    "rating.poor": "Poor",
+    "rating.fair": "Fair",
+    "rating.good": "Good",
+    "rating.veryGood": "Very Good",
+    "rating.excellent": "Excellent",
+    "profile.orderItems": "Order Items",
+    "profile.orderHistoryDesc": "View your order history and rate delivered products",
+
     // About Page
     "about.title": "About JoJo Labs",
     "about.subtitle": "Born from the passion for beauty and technology.",

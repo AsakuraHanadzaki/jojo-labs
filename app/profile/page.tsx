@@ -11,8 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { User, Package, Heart } from "lucide-react"
+import { User, Package, Heart, ChevronDown, ChevronUp, Star, CheckCircle } from "lucide-react"
 import Image from "next/image"
+import { ProductRatingDialog } from "@/components/product-rating-dialog"
 
 interface Profile {
   full_name: string
@@ -20,11 +21,31 @@ interface Profile {
   email: string
 }
 
+interface OrderItem {
+  id: string
+  product_id: string
+  product_name: string
+  product_image: string
+  quantity: number
+  unit_price: number
+  total_price: number
+}
+
 interface Order {
   id: string
   created_at: string
   total: number
   status: string
+  customer_name: string
+  customer_email: string
+  order_items?: OrderItem[]
+}
+
+interface ProductRating {
+  id: string
+  product_id: string
+  order_id: string
+  rating: number
 }
 
 interface WishlistItem {
@@ -50,6 +71,9 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
+  const [userRatings, setUserRatings] = useState<ProductRating[]>([])
+  const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!loading && !user) {
@@ -77,10 +101,34 @@ export default function ProfilePage() {
   const fetchOrders = async () => {
     const { data } = await supabase
       .from("orders")
-      .select("*")
+      .select("*, order_items(*)")
       .eq("user_id", user?.id)
       .order("created_at", { ascending: false })
     if (data) setOrders(data)
+    
+    // Also fetch user's ratings
+    const { data: ratings } = await supabase
+      .from("product_ratings")
+      .select("id, product_id, order_id, rating")
+    if (ratings) setUserRatings(ratings)
+  }
+
+  const toggleOrderExpanded = async (orderId: string) => {
+    const newExpanded = new Set(expandedOrders)
+    if (newExpanded.has(orderId)) {
+      newExpanded.delete(orderId)
+    } else {
+      newExpanded.add(orderId)
+    }
+    setExpandedOrders(newExpanded)
+  }
+
+  const hasRatedProduct = (orderId: string, productId: string) => {
+    return userRatings.some(r => r.order_id === orderId && r.product_id === productId)
+  }
+
+  const handleRatingSubmitted = () => {
+    fetchOrders()
   }
 
   const fetchWishlist = async () => {
@@ -188,7 +236,7 @@ export default function ProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>{t("profile.orders")}</CardTitle>
-              <CardDescription>View your order history</CardDescription>
+              <CardDescription>{t("profile.orderHistoryDesc") || "View your order history and rate delivered products"}</CardDescription>
             </CardHeader>
             <CardContent>
               {orders.length === 0 ? (
@@ -196,19 +244,92 @@ export default function ProfilePage() {
               ) : (
                 <div className="space-y-4">
                   {orders.map((order) => (
-                    <div key={order.id} className="flex justify-between items-center p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">
-                          {t("profile.order")} #{order.id.slice(0, 8)}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(order.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">AMD {order.total}</p>
-                        <p className="text-sm text-muted-foreground capitalize">{order.status}</p>
-                      </div>
+                    <div key={order.id} className="border rounded-lg overflow-hidden">
+                      {/* Order Header */}
+                      <button
+                        onClick={() => toggleOrderExpanded(order.id)}
+                        className="w-full flex justify-between items-center p-4 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="text-left">
+                          <p className="font-medium">
+                            {t("profile.order")} #{order.id.slice(0, 8)}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="font-medium">AMD {order.total}</p>
+                            <p className={`text-sm capitalize ${
+                              order.status === "delivered" 
+                                ? "text-green-600" 
+                                : order.status === "cancelled" 
+                                  ? "text-red-600" 
+                                  : "text-muted-foreground"
+                            }`}>
+                              {order.status}
+                            </p>
+                          </div>
+                          {expandedOrders.has(order.id) ? (
+                            <ChevronUp className="w-5 h-5 text-gray-400" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Order Items (Expanded) */}
+                      {expandedOrders.has(order.id) && order.order_items && (
+                        <div className="border-t bg-gray-50 p-4">
+                          <p className="text-sm font-medium mb-3">{t("profile.orderItems") || "Order Items"}</p>
+                          <div className="space-y-3">
+                            {order.order_items.map((item) => (
+                              <div key={item.id} className="flex items-center gap-4 bg-white p-3 rounded-lg">
+                                <img
+                                  src={item.product_image || "/placeholder.svg"}
+                                  alt={item.product_name}
+                                  className="w-16 h-16 object-cover rounded"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{item.product_name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {item.quantity} × AMD {item.unit_price}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-medium">AMD {item.total_price}</p>
+                                  {/* Rating Section */}
+                                  {order.status === "delivered" && (
+                                    <div className="mt-2">
+                                      {hasRatedProduct(order.id, item.product_id) ? (
+                                        <span className="inline-flex items-center text-sm text-green-600">
+                                          <CheckCircle className="w-4 h-4 mr-1" />
+                                          {t("rating.rated") || "Rated"}
+                                        </span>
+                                      ) : (
+                                        <ProductRatingDialog
+                                          productId={item.product_id}
+                                          productName={item.product_name}
+                                          orderId={order.id}
+                                          reviewerName={order.customer_name}
+                                          reviewerEmail={order.customer_email}
+                                          onRatingSubmitted={handleRatingSubmitted}
+                                        />
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {order.status === "delivered" && (
+                            <p className="text-xs text-muted-foreground mt-3">
+                              {t("rating.deliveredNote") || "You can rate products from delivered orders"}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
