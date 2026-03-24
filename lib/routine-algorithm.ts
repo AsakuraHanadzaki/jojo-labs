@@ -476,7 +476,10 @@ function weeklyPlan(
 }
 
 export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): RoutineResult {
-  const products: ProductMap = productsMap || (allProducts as unknown as ProductMap)
+  // IMPORTANT: Only use productsMap if provided (contains only in-stock products from DB)
+  // Only fall back to allProducts if no productsMap is provided at all
+  const hasDbProducts = productsMap && Object.keys(productsMap).length > 0
+  const products: ProductMap = hasDbProducts ? productsMap : (allProducts as unknown as ProductMap)
   const language = input.language || "en"
   const t = (key: string) => getTranslation(key, language)
 
@@ -484,7 +487,11 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
   console.log(`[v0]   - Skin type: ${input.skinType}`)
   console.log(`[v0]   - Concerns: ${input.concerns}`)
   console.log(`[v0]   - Routine level: ${input.routine}`)
+  console.log(`[v0]   - Using DB products: ${hasDbProducts}`)
   console.log(`[v0]   - Total products available: ${Object.keys(products).length}`)
+  if (hasDbProducts) {
+    console.log(`[v0]   - Products: ${Object.values(products).map(p => p.name).join(", ")}`)
+  }
 
   const level = (input.routine || "easy").toLowerCase().replace("basic", "easy")
   const actives = planActives(input)
@@ -592,9 +599,17 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
   })
 
   const recommendedProductIds = uniq([...AM, ...PM].map((s) => s.productId || "").filter(Boolean) as string[])
+  
+  // Only include products that exist in our products map (which only contains in-stock items)
   const recommendedProducts = recommendedProductIds
     .map((id) => products[id])
-    .filter(Boolean)
+    .filter((product) => {
+      if (!product) {
+        console.log(`[v0] WARNING: Product ID not found in available products`)
+        return false
+      }
+      return true
+    })
     .map((product) => ({
       id: product.id,
       name: product.name,
@@ -610,6 +625,9 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
       concerns: product.concerns,
       skin_type: product.skin_type,
     }))
+
+  console.log(`[v0] Final recommended products (${recommendedProducts.length}):`)
+  recommendedProducts.forEach(p => console.log(`[v0]   - ${p.name}`))
 
   return { summary, AM, PM, weekly, analysis, recommendedProducts }
 }
