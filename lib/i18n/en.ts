@@ -24,7 +24,7 @@ export const en = {
     connect: "Connect",
     instagram: "Instagram",
     tiktok: "TikTok",
-    copyright: "© 2025 JoJo Labs. All rights reserved.",
+    copyright: "© 2026 JoJo Labs. All rights reserved.",
   },
   // Home page
   home: {
