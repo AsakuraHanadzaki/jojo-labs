@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, CreditCard, Truck } from "lucide-react"
@@ -17,6 +17,7 @@ import { useTranslation } from "@/hooks/use-translation"
 import { useAuth } from "@/hooks/use-auth"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { IpayCheckoutButton } from "@/components/ipay/ipay-checkout-button"
 
 export default function CheckoutPage() {
   const { state, clearCart } = useCart()
@@ -26,6 +27,7 @@ export default function CheckoutPage() {
   const supabase = createClient()
   const [paymentMethod, setPaymentMethod] = useState("card")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const orderNumber = useMemo(() => `web-${Date.now()}-${Math.floor(Math.random() * 1000)}`, [])
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -65,6 +67,10 @@ export default function CheckoutPage() {
 
   const getFinalTotal = () => {
     return getTotalPrice() + getShippingCost()
+  }
+
+  const getIpayAmount = () => {
+    return Math.round(getFinalTotal())
   }
 
   const handleCompleteOrder = async () => {
@@ -367,6 +373,15 @@ export default function CheckoutPage() {
                 >
                   {isSubmitting ? "Processing..." : t("checkout.complete")}
                 </Button>
+
+                <div className="mt-4">
+                  <IpayCheckoutButton
+                    orderNumber={orderNumber}
+                    amount={getIpayAmount()}
+                    currency="051"
+                    language="en"
+                  />
+                </div>
 
                 <div className="text-center text-xs text-gray-500 mt-4">
                   <p>{t("checkout.terms")}</p>
