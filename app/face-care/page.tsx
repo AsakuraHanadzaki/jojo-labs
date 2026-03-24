@@ -1,5 +1,6 @@
 "use client"
 
+// Face Care page - Updated March 2026
 import { useState, useEffect } from "react"
 import { Filter, X } from "lucide-react"
 import { useSearchParams } from "next/navigation"

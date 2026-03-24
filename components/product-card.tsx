@@ -1,5 +1,6 @@
 "use client"
 
+// Product Card component - Updated March 2026
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"

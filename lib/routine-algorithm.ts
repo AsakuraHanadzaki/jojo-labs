@@ -1,3 +1,4 @@
+// Routine algorithm - Updated March 2026 - Only recommends in-stock products
 import { allProducts } from "./all-products"
 import { getTranslation, type Language } from "./i18n"
 
