@@ -38,7 +38,7 @@ export const translations = {
     "footer.instagram": "Instagram",
     "footer.tiktok": "TikTok",
     "footer.telegram": "Telegram",
-    "footer.copyright": "© 2025 JoJo Labs. All rights reserved.",
+    "footer.copyright": "© 2026 JoJo Labs. All rights reserved.",
     "footer.privacy": "Privacy Policy", // Added privacy policy translations
 
     // Face Care Page
@@ -461,7 +461,7 @@ export const translations = {
     "footer.instagram": "Инстаграм",
     "footer.tiktok": "ТикТок",
     "footer.telegram": "Телеграм",
-    "footer.copyright": "© 2025 JoJo Labs. Все права защищены.",
+    "footer.copyright": "© 2026 JoJo Labs. Все права защищены.",
     "footer.privacy": "Политика конфиденциальности", // Added privacy policy translations
 
     // Face Care Page
@@ -836,7 +836,7 @@ export const translations = {
     "footer.instagram": "Instagram",
     "footer.tiktok": "TikTok",
     "footer.telegram": "Telegram",
-    "footer.copyright": "© 2025 JoJo Labs. Բոլոր իրավունքները պաշտպանված են:",
+    "footer.copyright": "© 2026 JoJo Labs. Բոլոր իրավունքները պաշտպանված են:",
     "footer.privacy": "Գաղտնիության քաղաքականություն", // Added privacy policy translations
 
     // Face Care Page

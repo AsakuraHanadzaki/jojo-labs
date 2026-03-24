@@ -38,6 +38,8 @@ import {
   Edit,
   EyeOff,
   Trash2,
+  Upload,
+  ImageIcon,
 } from "lucide-react"
 import type { Product, Order, CustomerRequest, ProductRating } from "@/lib/supabase/types"
 import Link from "next/link"
@@ -80,8 +82,63 @@ export default function AdminPage() {
   const [orderFilter, setOrderFilter] = useState("all")
   const [requestFilter, setRequestFilter] = useState("all")
   const [ratingFilter, setRatingFilter] = useState("all")
+  
+  // Image upload states
+  const [uploadingProductId, setUploadingProductId] = useState<string | null>(null)
+  
+  // Product editing states
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
+  const [editingPrice, setEditingPrice] = useState<string>("")
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false)
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    name_ru: "",
+    name_hy: "",
+    description: "",
+    description_ru: "",
+    description_hy: "",
+    price: "",
+    category: "cleansers",
+    stock: 100,
+    low_stock_threshold: 10,
+    in_stock: true,
+    image: "/placeholder.svg",
+  })
+  const [isAddingProduct, setIsAddingProduct] = useState(false)
 
   const supabase = getSupabaseBrowserClient()
+
+  // Upload product image
+  const handleImageUpload = async (productId: string, file: File) => {
+    setUploadingProductId(productId)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('productId', productId)
+
+      const response = await fetch('/api/upload-product-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Update local state with new image URL
+        setProducts(products.map(p => 
+          p.id === productId ? { ...p, image: result.url } : p
+        ))
+        alert('Image uploaded successfully!')
+      } else {
+        alert('Failed to upload image: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload image')
+    } finally {
+      setUploadingProductId(null)
+    }
+  }
 
   // Verify admin code
   const handleLogin = async () => {
@@ -159,6 +216,103 @@ export default function AdminPage() {
 
     if (!error) {
       setProducts(products.map((p) => (p.id === productId ? { ...p, stock: newStock, in_stock: newStock > 0 } : p)))
+    }
+  }
+
+  // Update product price
+  const updatePrice = async (productId: string, newPrice: string) => {
+    const { error } = await supabase
+      .from("products")
+      .update({ price: newPrice })
+      .eq("id", productId)
+
+    if (!error) {
+      setProducts(products.map((p) => (p.id === productId ? { ...p, price: newPrice } : p)))
+      setEditingPriceId(null)
+      setEditingPrice("")
+    }
+  }
+
+  // Add new product
+  const addProduct = async () => {
+    if (!newProduct.name || !newProduct.price) {
+      alert("Please fill in product name and price")
+      return
+    }
+
+    setIsAddingProduct(true)
+    try {
+      // Generate a URL-friendly ID from the product name
+      const productId = newProduct.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "")
+        + "-" + Date.now().toString(36)
+
+      const { data, error } = await supabase
+        .from("products")
+        .insert({
+          id: productId,
+          name: newProduct.name,
+          name_ru: newProduct.name_ru || newProduct.name,
+          name_hy: newProduct.name_hy || newProduct.name,
+          description: newProduct.description,
+          description_ru: newProduct.description_ru || newProduct.description,
+          description_hy: newProduct.description_hy || newProduct.description,
+          price: newProduct.price,
+          category: newProduct.category,
+          stock: newProduct.stock,
+          low_stock_threshold: newProduct.low_stock_threshold,
+          in_stock: newProduct.stock > 0,
+          image: newProduct.image,
+          rating: 0,
+          reviews: 0,
+          eco: false,
+          benefits: [],
+          how_to_use: [],
+          ingredients: [],
+          concerns: [],
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      if (data) {
+        setProducts([...products, data])
+        setIsAddProductOpen(false)
+        setNewProduct({
+          name: "",
+          name_ru: "",
+          name_hy: "",
+          description: "",
+          description_ru: "",
+          description_hy: "",
+          price: "",
+          category: "cleansers",
+          stock: 100,
+          low_stock_threshold: 10,
+          in_stock: true,
+          image: "/placeholder.svg",
+        })
+        alert("Product added successfully!")
+      }
+    } catch (error) {
+      console.error("Error adding product:", error)
+      alert("Failed to add product")
+    } finally {
+      setIsAddingProduct(false)
+    }
+  }
+
+  // Delete product
+  const deleteProduct = async (productId: string) => {
+    if (!confirm("Are you sure you want to delete this product?")) return
+
+    const { error } = await supabase.from("products").delete().eq("id", productId)
+
+    if (!error) {
+      setProducts(products.filter((p) => p.id !== productId))
     }
   }
 
@@ -463,14 +617,167 @@ export default function AdminPage() {
           {/* Stock Management Tab */}
           <TabsContent value="products">
             <Card>
-              <CardHeader>
-                <CardTitle>Stock Management</CardTitle>
-                <CardDescription>Manage product inventory levels</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Product Management</CardTitle>
+                  <CardDescription>Manage product inventory, pricing, and images</CardDescription>
+                </div>
+                <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Product
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Add New Product</DialogTitle>
+                      <DialogDescription>Fill in the product details to add it to your store</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Product Name (English) *</Label>
+                          <Input
+                            id="name"
+                            value={newProduct.name}
+                            onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                            placeholder="e.g., Vitamin C Serum"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="price">Price (AMD) *</Label>
+                          <Input
+                            id="price"
+                            value={newProduct.price}
+                            onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                            placeholder="e.g., 15000"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name_ru">Product Name (Russian)</Label>
+                          <Input
+                            id="name_ru"
+                            value={newProduct.name_ru}
+                            onChange={(e) => setNewProduct({ ...newProduct, name_ru: e.target.value })}
+                            placeholder="Название продукта"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="name_hy">Product Name (Armenian)</Label>
+                          <Input
+                            id="name_hy"
+                            value={newProduct.name_hy}
+                            onChange={(e) => setNewProduct({ ...newProduct, name_hy: e.target.value })}
+                            placeholder="Ապրdelays անունdelays"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Description (English)</Label>
+                        <Textarea
+                          id="description"
+                          value={newProduct.description}
+                          onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                          placeholder="Product description..."
+                          rows={3}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="description_ru">Description (Russian)</Label>
+                          <Textarea
+                            id="description_ru"
+                            value={newProduct.description_ru}
+                            onChange={(e) => setNewProduct({ ...newProduct, description_ru: e.target.value })}
+                            placeholder="Описание продукта..."
+                            rows={2}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="description_hy">Description (Armenian)</Label>
+                          <Textarea
+                            id="description_hy"
+                            value={newProduct.description_hy}
+                            onChange={(e) => setNewProduct({ ...newProduct, description_hy: e.target.value })}
+                            placeholder=" Delays նdelays delays..."
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="category">Category</Label>
+                          <Select
+                            value={newProduct.category}
+                            onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cleansers">Cleansers</SelectItem>
+                              <SelectItem value="toners">Toners</SelectItem>
+                              <SelectItem value="serums">Serums</SelectItem>
+                              <SelectItem value="moisturizers">Moisturizers</SelectItem>
+                              <SelectItem value="sunscreens">Sunscreens</SelectItem>
+                              <SelectItem value="masks">Masks</SelectItem>
+                              <SelectItem value="essences">Essences</SelectItem>
+                              <SelectItem value="eye-care">Eye Care</SelectItem>
+                              <SelectItem value="lip-care">Lip Care</SelectItem>
+                              <SelectItem value="body-care">Body Care</SelectItem>
+                              <SelectItem value="hair-care">Hair Care</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="stock">Initial Stock</Label>
+                          <Input
+                            id="stock"
+                            type="number"
+                            value={newProduct.stock}
+                            onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="low_stock">Low Stock Alert</Label>
+                          <Input
+                            id="low_stock"
+                            type="number"
+                            value={newProduct.low_stock_threshold}
+                            onChange={(e) => setNewProduct({ ...newProduct, low_stock_threshold: parseInt(e.target.value) || 10 })}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-4">
+                        <Button variant="outline" onClick={() => setIsAddProductOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={addProduct} disabled={isAddingProduct}>
+                          {isAddingProduct ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              Adding...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Product
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-24">Image</TableHead>
                       <TableHead>Product</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Price</TableHead>
@@ -482,9 +789,92 @@ export default function AdminPage() {
                   <TableBody>
                     {products.map((product) => (
                       <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>{product.category_id}</TableCell>
-                        <TableCell>${product.price}</TableCell>
+                        <TableCell>
+                          <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden group">
+                            {product.image && product.image !== '/placeholder.svg' ? (
+                              <img 
+                                src={product.image} 
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/placeholder.svg'
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ImageIcon className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                            <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                              {uploadingProductId === product.id ? (
+                                <RefreshCw className="w-5 h-5 text-white animate-spin" />
+                              ) : (
+                                <Upload className="w-5 h-5 text-white" />
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) handleImageUpload(product.id, file)
+                                }}
+                                disabled={uploadingProductId === product.id}
+                              />
+                            </label>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium max-w-48">
+                          <div className="truncate" title={product.name}>{product.name}</div>
+                        </TableCell>
+                        <TableCell>{product.category || product.category_id}</TableCell>
+                        <TableCell>
+                          {editingPriceId === product.id ? (
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="text"
+                                className="w-24"
+                                value={editingPrice}
+                                onChange={(e) => setEditingPrice(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") updatePrice(product.id, editingPrice)
+                                  if (e.key === "Escape") {
+                                    setEditingPriceId(null)
+                                    setEditingPrice("")
+                                  }
+                                }}
+                                autoFocus
+                              />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => updatePrice(product.id, editingPrice)}
+                              >
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingPriceId(null)
+                                  setEditingPrice("")
+                                }}
+                              >
+                                <XCircle className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <button
+                              className="text-left hover:bg-gray-100 px-2 py-1 rounded cursor-pointer"
+                              onClick={() => {
+                                setEditingPriceId(product.id)
+                                setEditingPrice(product.price || "")
+                              }}
+                            >
+                              {product.price} AMD
+                            </button>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Input
                             type="number"
@@ -522,6 +912,13 @@ export default function AdminPage() {
                               onClick={() => updateStock(product.id, product.stock + 50)}
                             >
                               +50
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteProduct(product.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </TableCell>

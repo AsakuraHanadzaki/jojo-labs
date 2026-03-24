@@ -1,5 +1,7 @@
-import Image from "next/image"
+"use client"
+
 import Link from "next/link"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -26,6 +28,16 @@ export function ProductCard({
   inStock = true,
   lowStockThreshold = 10,
 }: ProductCardProps) {
+  const [imgSrc, setImgSrc] = useState(image || "/placeholder.svg")
+  const [hasError, setHasError] = useState(false)
+
+  // Update imgSrc when the image prop changes
+  useEffect(() => {
+    if (image && image !== "/placeholder.svg") {
+      setImgSrc(image)
+      setHasError(false)
+    }
+  }, [image])
   const getStockStatus = () => {
     const currentStock = stock ?? 0
 
@@ -45,12 +57,15 @@ export function ProductCard({
       <Card className="group cursor-pointer border-0 shadow-none hover:shadow-lg transition-shadow">
         <CardContent className="p-0">
           <div className="relative aspect-square bg-gradient-to-br from-rose-50 to-pink-100 rounded-3xl overflow-hidden mb-4">
-            <Image
-              src={image || "/placeholder.svg"}
+            <img
+              src={hasError ? "/placeholder.svg" : imgSrc}
               alt={name}
-              width={300}
-              height={300}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={() => {
+                setHasError(true)
+                setImgSrc("/placeholder.svg")
+              }}
+              loading="lazy"
             />
             <Badge variant="outline" className={`absolute top-3 right-3 ${stockStatus.color} text-xs font-medium`}>
               {stockStatus.label}

@@ -24,7 +24,7 @@ export const ru = {
     connect: "Связаться",
     instagram: "Instagram",
     tiktok: "TikTok",
-    copyright: "© 2025 JoJo Labs. Все права защищены.",
+    copyright: "© 2026 JoJo Labs. Все права защищены.",
   },
   // Home page
   home: {

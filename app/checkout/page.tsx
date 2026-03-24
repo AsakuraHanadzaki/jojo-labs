@@ -74,56 +74,108 @@ export default function CheckoutPage() {
   }
 
   const handleCompleteOrder = async () => {
-    setIsSubmitting(true)
+  setIsSubmitting(true);
 
-    try {
-      const total = getFinalTotal()
-
-      // Create order in Supabase
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user?.id || null,
-          customer_name: `${firstName} ${lastName}`.trim(),
-          customer_email: email,
-          customer_phone: phone,
-          total: total,
-          status: "pending",
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      // Create order items
-      if (order) {
-        const orderItems = state.items.map((item) => ({
-          order_id: order.id,
-          product_id: item.id,
-          quantity: item.quantity,
-          price: Number.parseFloat(item.price.replace("AMD", "").replace(",", "")),
-        }))
-
-        await supabase.from("order_items").insert(orderItems)
-      }
-
-      // Clear cart
-      clearCart()
-
-      // Clear saved cart in database if logged in
-      if (user) {
-        await supabase.from("saved_carts").delete().eq("user_id", user.id)
-      }
-
-      // Redirect to success page
-      router.push("/checkout/success")
-    } catch (error) {
-      console.error("Error creating order:", error)
-      alert("Failed to complete order. Please try again.")
-    } finally {
-      setIsSubmitting(false)
+  try {
+    // Validate required fields
+    if (!firstName || !lastName || !email || !phone) {
+      alert("Please fill in all required fields");
+      setIsSubmitting(false);
+      return;
     }
+
+    const total = getFinalTotal();
+    
+    // Generate unique order number
+    const orderNumber = `JJ-${Date.now().toString(36).toUpperCase()}`;
+
+    // Create order in Supabase first
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .insert({
+        user_id: user?.id || null,
+        order_number: orderNumber,
+        customer_name: `${firstName} ${lastName}`.trim(),
+        customer_email: email,
+        customer_phone: phone,
+        shipping_address: (document.getElementById('address') as HTMLInputElement)?.value || '',
+        shipping_city: (document.getElementById('city') as HTMLInputElement)?.value || '',
+        shipping_country: 'Armenia',
+        shipping_postal_code: (document.getElementById('postalCode') as HTMLInputElement)?.value || '',
+        subtotal: getTotalPrice(),
+        shipping_cost: getShippingCost(),
+        total: total,
+        status: "pending",
+        payment_method: "card",
+        payment_status: "pending",
+      })
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Create order items
+    if (order) {
+      const orderItems = state.items.map((item) => ({
+        order_id: order.id,
+        product_id: item.id,
+        product_name: item.name,
+        product_image: item.image,
+        quantity: item.quantity,
+        unit_price: Number.parseFloat(item.price.replace("AMD", "").replace(",", "")),
+        total_price: Number.parseFloat(item.price.replace("AMD", "").replace(",", "")) * item.quantity,
+      }));
+
+      await supabase.from("order_items").insert(orderItems);
+
+      // Decrease stock for each product
+      for (const item of state.items) {
+        await supabase.rpc('decrease_product_stock', {
+          p_product_id: item.id,
+          p_quantity: item.quantity
+        });
+      }
+    }
+
+    // Register payment with Arca
+    const paymentResponse = await fetch('/api/payment/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        orderNumber: orderNumber,
+        amount: Math.round(total * 100), // Convert to minor units (cents)
+        description: `Order ${orderNumber} - ${state.items.length} items`,
+        customerName: `${firstName} ${lastName}`,
+        customerEmail: email,
+        customerPhone: phone,
+      }),
+    });
+
+    const paymentData = await paymentResponse.json();
+
+    if (!paymentData.success) {
+      throw new Error(paymentData.error || 'Payment registration failed');
+    }
+
+    // Clear cart before redirect
+    clearCart();
+    
+    // Clear saved cart in database if logged in
+    if (user) {
+      await supabase.from("saved_carts").delete().eq("user_id", user.id);
+    }
+
+    // Redirect to payment gateway
+    window.location.href = paymentData.formUrl;
+
+  } catch (error) {
+    console.error("Error creating order:", error);
+    alert(`Failed to complete order: ${(error as Error).message}`);
+    setIsSubmitting(false);
   }
+};
 
   return (
     <div className="min-h-screen bg-white">
@@ -250,27 +302,16 @@ export default function CheckoutPage() {
                 </RadioGroup>
 
                 {paymentMethod === "card" && (
-                  <div className="mt-6 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cardNumber">{t("checkout.cardnumber")}</Label>
-                      <Input id="cardNumber" placeholder={t("checkout.cardnumber.placeholder")} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="expiry">{t("checkout.expiry")}</Label>
-                        <Input id="expiry" placeholder={t("checkout.expiry.placeholder")} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cvv">{t("checkout.cvv")}</Label>
-                        <Input id="cvv" placeholder={t("checkout.cvv.placeholder")} />
-                      </div>
-                    </div>
+                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                    <p className="text-sm text-blue-800">
+                      You'll be redirected to Arca's secure payment page to enter your card details.
+                    </p>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </div>
-
+          </div>  
+          
           {/* Order Summary */}
           <div className="space-y-8">
             <Card className="rounded-3xl">

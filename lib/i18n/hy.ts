@@ -15,7 +15,7 @@ export const hy = {
     connect: "Կապվեք մեզ հետ",
     instagram: "Instagram",
     tiktok: "TikTok",
-    copyright: "© 2025 JoJo Labs. Բոլոր իրավունքները պաշտպանված են:",
+    copyright: "© 2026 JoJo Labs. Բոլոր իրավունքները պաշտպանված են:",
   },
 
   // Home page

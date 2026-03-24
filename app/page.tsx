@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { Sparkles, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,6 +10,32 @@ import { useTranslation } from "@/hooks/use-translation"
 import { fetchProducts, getTranslatedField } from "@/lib/products-service"
 import type { Product } from "@/lib/supabase/types"
 import { useEffect, useState } from "react"
+
+function ProductImage({ product, language }: { product: Product; language: string }) {
+  const [imgSrc, setImgSrc] = useState(product.image || "/placeholder.svg")
+  const [hasError, setHasError] = useState(false)
+
+  // Update when product.image changes
+  useEffect(() => {
+    if (product.image && product.image !== "/placeholder.svg") {
+      setImgSrc(product.image)
+      setHasError(false)
+    }
+  }, [product.image])
+  
+  return (
+    <img
+      src={hasError ? "/placeholder.svg" : imgSrc}
+      alt={getTranslatedField(product, "name", language)}
+      className="absolute inset-0 w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+      onError={() => {
+        setHasError(true)
+        setImgSrc("/placeholder.svg")
+      }}
+      loading="lazy"
+    />
+  )
+}
 
 export default function HomePage() {
   const { t, language } = useTranslation()
@@ -51,12 +76,7 @@ export default function HomePage() {
                 <Link key={product.id} href={`/products/${product.id}`} className="group">
                   <div className="bg-gradient-to-br from-rose-50 to-pink-100 rounded-3xl p-6 hover:shadow-lg transition-all duration-300">
                     <div className="relative aspect-square mb-4 overflow-hidden rounded-2xl bg-white">
-                      <Image
-                        src={product.image || "/placeholder.svg"}
-                        alt={getTranslatedField(product, "name", language)}
-                        fill
-                        className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <ProductImage product={product} language={language} />
                     </div>
                     <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-rose-600 transition-colors">
                       {getTranslatedField(product, "name", language)}

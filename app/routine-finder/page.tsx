@@ -190,7 +190,7 @@ export default function RoutineFinderPage() {
         })),
     [concerns, language, t],
   )
-  const totalSteps = followUpQuestions.length > 0 ? 5 : 4
+  const totalSteps = 5
 
   useEffect(() => {
     setStep(1)
@@ -331,6 +331,9 @@ export default function RoutineFinderPage() {
 
   const productById = useMemo(() => {
     if (!result?.recommendedProducts) return {}
+    console.log("[v0] CLIENT: Building productById from recommendedProducts:")
+    console.log("[v0] CLIENT: Received", result.recommendedProducts.length, "products")
+    result.recommendedProducts.forEach(p => console.log("[v0] CLIENT:   -", p.id, ":", p.name))
     return result.recommendedProducts.reduce(
       (acc, p) => {
         acc[p.id] = p
@@ -524,6 +527,8 @@ export default function RoutineFinderPage() {
                 ))}
 
               {/* Morning Routine */}
+              {console.log("[v0] CLIENT: Rendering AM routine with", result.AM.length, "steps")}
+              {result.AM.forEach(s => console.log("[v0] CLIENT: AM step productId:", s.productId, "found:", !!productById[s.productId || ""]))}
               <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="bg-yellow-100 p-3 rounded-full">
@@ -535,6 +540,9 @@ export default function RoutineFinderPage() {
                 <div className="space-y-4">
                   {result.AM.map((s, idx) => {
                     const p = s.productId ? productById[s.productId] : undefined
+                    if (s.productId && !p) {
+                      console.log("[v0] CLIENT WARNING: Product not found for AM step:", s.productId)
+                    }
                     return (
                       <div
                         key={idx}

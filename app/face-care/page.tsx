@@ -61,6 +61,8 @@ export default function FaceCarePage() {
         if (dbProducts.length > 0) {
           const faceCareProducts = dbProducts.filter((p) => faceCareCategories.includes(p.category))
           console.log("[v0] Filtered face care products:", faceCareProducts.length)
+          // Debug: Log each product's image URL
+          faceCareProducts.forEach(p => console.log("[v0] FaceCare product:", p.name, "| Image URL:", p.image))
 
           let filteredByConcern = faceCareProducts
           if (concernParam) {

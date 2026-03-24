@@ -78,16 +78,37 @@ const formatTemplate = (template: string, values: Record<string, string>) =>
 // Map user concerns to canonical buckets
 const normalizeConcern = (c: string): string => {
   const n = c.trim().toLowerCase()
-  if (["acne", "pimples", "breakouts"].includes(n)) return "acne"
-  if (["pores", "blackheads", "whiteheads", "oil"].includes(n)) return "pores"
-  if (["dark spots", "hyperpigmentation", "melasma"].includes(n)) return "pigment"
-  if (["dryness", "dry"].includes(n)) return "dryness"
-  if (["dehydration"].includes(n)) return "dehydration"
-  if (["dullness", "texture"].includes(n)) return "texture"
-  if (["fine lines", "wrinkles", "aging"].includes(n)) return "aging"
-  if (["redness", "sensitivity", "rosacea"].includes(n)) return "sensitivity"
-  if (["uneven tone"].includes(n)) return "uneven"
+  // Acne-related concerns
+  if (/acne|pimples?|breakouts?|blemish/.test(n)) return "acne"
+  // Pore-related concerns  
+  if (/pores?|blackheads?|whiteheads?|clogged|excess oil|oily|sebum/.test(n)) return "pores"
+  // Pigmentation concerns
+  if (/dark spots?|hyperpigmentation|melasma|spots?|uneven tone|discoloration/.test(n)) return "pigment"
+  // Dryness concerns
+  if (/dryness|dry skin|dry\b/.test(n)) return "dryness"
+  // Dehydration concerns
+  if (/dehydrat/.test(n)) return "dehydration"
+  // Texture/dullness concerns
+  if (/dullness|dull|texture|rough|uneven texture/.test(n)) return "texture"
+  // Aging concerns
+  if (/fine lines?|wrinkles?|aging|anti-?aging|mature|photoaging/.test(n)) return "aging"
+  // Sensitivity concerns
+  if (/redness|sensitiv|rosacea|irritat|inflam|compromised barrier|barrier/.test(n)) return "sensitivity"
+  // Uneven tone
+  if (/uneven|tone/.test(n)) return "uneven"
   return n
+}
+
+// Check if a product concern matches any user concern
+const concernsMatch = (productConcern: string, userConcerns: string[]): boolean => {
+  const normalizedProduct = normalizeConcern(productConcern)
+  return userConcerns.some(uc => {
+    const normalizedUser = normalizeConcern(uc)
+    // Direct match
+    if (normalizedProduct === normalizedUser) return true
+    // Partial match - check if they share the same bucket
+    return normalizedProduct.includes(normalizedUser) || normalizedUser.includes(normalizedProduct)
+  })
 }
 
 // Actives per bucket
@@ -253,16 +274,32 @@ function scoreProduct(id: string, slot: string, user: RoutineInput, actives: str
   console.log(`[v0]   - Skin type: ${p.skin_type}`)
   console.log(`[v0]   - Key ingredients: ${p.key_ingredients?.join(",")}`)
 
-  const userConcerns = toTokens(user.concerns).map(normalizeConcern)
+  // Parse user concerns - handle both comma-separated and space-separated
+  const userConcernsList = user.concerns
+    .split(/[,\n]+/)
+    .map(c => c.trim().toLowerCase())
+    .filter(Boolean)
+  
   let concernMatch = 0
   if (p.concerns && Array.isArray(p.concerns) && p.concerns.length > 0) {
-    const productConcerns = p.concerns.map((c: string) => normalizeConcern(c.toLowerCase()))
-    const matches = userConcerns.filter((uc) => productConcerns.includes(uc))
-    concernMatch = userConcerns.length > 0 ? matches.length / userConcerns.length : 0
-    console.log(`[v0]   - Concern match: ${concernMatch.toFixed(2)} (${matches.length}/${userConcerns.length})`)
+    // Count how many product concerns match any user concern
+    const matchingConcerns = p.concerns.filter((pc: string) => 
+      concernsMatch(pc, userConcernsList)
+    )
+    // Score based on how many user concerns are addressed
+    const userConcernsAddressed = userConcernsList.filter(uc =>
+      p.concerns.some((pc: string) => concernsMatch(pc, [uc]))
+    )
+    concernMatch = userConcernsList.length > 0 
+      ? userConcernsAddressed.length / userConcernsList.length 
+      : 0
+    console.log(`[v0]   - Product concerns: ${p.concerns.join(", ")}`)
+    console.log(`[v0]   - User concerns: ${userConcernsList.join(", ")}`)
+    console.log(`[v0]   - Matching concerns: ${matchingConcerns.join(", ")}`)
+    console.log(`[v0]   - Concern match: ${concernMatch.toFixed(2)} (${userConcernsAddressed.length}/${userConcernsList.length} user concerns addressed)`)
   } else {
     concernMatch = actives.length ? actives.filter((a) => acts.includes(a)).length / actives.length : 0
-    console.log(`[v0]   - Concern match (fallback): ${concernMatch.toFixed(2)}`)
+    console.log(`[v0]   - Concern match (ingredient fallback): ${concernMatch.toFixed(2)}`)
   }
 
   const roleFit = roles.includes(role) ? 1 : 0.25
@@ -439,7 +476,10 @@ function weeklyPlan(
 }
 
 export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): RoutineResult {
-  const products: ProductMap = productsMap || (allProducts as unknown as ProductMap)
+  // IMPORTANT: Only use productsMap if provided (contains only in-stock products from DB)
+  // Only fall back to allProducts if no productsMap is provided at all
+  const hasDbProducts = productsMap && Object.keys(productsMap).length > 0
+  const products: ProductMap = hasDbProducts ? productsMap : (allProducts as unknown as ProductMap)
   const language = input.language || "en"
   const t = (key: string) => getTranslation(key, language)
 
@@ -447,7 +487,11 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
   console.log(`[v0]   - Skin type: ${input.skinType}`)
   console.log(`[v0]   - Concerns: ${input.concerns}`)
   console.log(`[v0]   - Routine level: ${input.routine}`)
+  console.log(`[v0]   - Using DB products: ${hasDbProducts}`)
   console.log(`[v0]   - Total products available: ${Object.keys(products).length}`)
+  if (hasDbProducts) {
+    console.log(`[v0]   - Products: ${Object.values(products).map(p => p.name).join(", ")}`)
+  }
 
   const level = (input.routine || "easy").toLowerCase().replace("basic", "easy")
   const actives = planActives(input)
@@ -555,9 +599,17 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
   })
 
   const recommendedProductIds = uniq([...AM, ...PM].map((s) => s.productId || "").filter(Boolean) as string[])
+  
+  // Only include products that exist in our products map (which only contains in-stock items)
   const recommendedProducts = recommendedProductIds
     .map((id) => products[id])
-    .filter(Boolean)
+    .filter((product) => {
+      if (!product) {
+        console.log(`[v0] WARNING: Product ID not found in available products`)
+        return false
+      }
+      return true
+    })
     .map((product) => ({
       id: product.id,
       name: product.name,
@@ -573,6 +625,9 @@ export function buildRoutine(input: RoutineInput, productsMap?: ProductMap): Rou
       concerns: product.concerns,
       skin_type: product.skin_type,
     }))
+
+  console.log(`[v0] Final recommended products (${recommendedProducts.length}):`)
+  recommendedProducts.forEach(p => console.log(`[v0]   - ${p.name}`))
 
   return { summary, AM, PM, weekly, analysis, recommendedProducts }
 }
