@@ -60,10 +60,13 @@ interface WishlistItem {
 }
 
 export default function ProfilePage() {
+  console.log("[v0] ProfilePage: Rendering")
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const { t } = useTranslation()
   const supabase = createClient()
+  
+  console.log("[v0] ProfilePage: Auth state", { user: user?.id, loading })
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
@@ -75,7 +78,9 @@ export default function ProfilePage() {
   const [userRatings, setUserRatings] = useState<ProductRating[]>([])
 
   useEffect(() => {
+    console.log("[v0] ProfilePage: useEffect check", { loading, user: user?.id })
     if (!loading && !user) {
+      console.log("[v0] ProfilePage: Redirecting to login")
       router.push("/auth/login")
     }
   }, [user, loading, router])
