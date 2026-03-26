@@ -103,18 +103,46 @@ export default function ProfilePage() {
   }
 
   const fetchOrders = async () => {
-    const { data } = await supabase
-      .from("orders")
-      .select("*, order_items(*)")
-      .eq("user_id", user?.id)
-      .order("created_at", { ascending: false })
-    if (data) setOrders(data)
-    
-    // Also fetch user's ratings
-    const { data: ratings } = await supabase
-      .from("product_ratings")
-      .select("id, product_id, order_id, rating")
-    if (ratings) setUserRatings(ratings)
+    try {
+      // First fetch orders
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("user_id", user?.id)
+        .order("created_at", { ascending: false })
+      
+      if (ordersError) {
+        console.log("[v0] Error fetching orders:", ordersError)
+        return
+      }
+
+      if (ordersData && ordersData.length > 0) {
+        // Fetch order items for all orders
+        const orderIds = ordersData.map(o => o.id)
+        const { data: itemsData } = await supabase
+          .from("order_items")
+          .select("*")
+          .in("order_id", orderIds)
+
+        // Attach items to their orders
+        const ordersWithItems = ordersData.map(order => ({
+          ...order,
+          order_items: itemsData?.filter(item => item.order_id === order.id) || []
+        }))
+        
+        setOrders(ordersWithItems)
+      } else {
+        setOrders([])
+      }
+      
+      // Also fetch user's ratings
+      const { data: ratings } = await supabase
+        .from("product_ratings")
+        .select("id, product_id, order_id, rating")
+      if (ratings) setUserRatings(ratings)
+    } catch (err) {
+      console.log("[v0] Error in fetchOrders:", err)
+    }
   }
 
   const toggleOrderExpanded = async (orderId: string) => {
