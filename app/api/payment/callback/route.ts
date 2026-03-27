@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { ehdmService, EHDMService } from '@/lib/ehdm-service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     // 6 = Authorization declined
 
     if (statusData.orderStatus === 2) {
-      // Payment successful
+      // Payment successful - first update order status
       await supabase
         .from('orders')
         .update({
@@ -47,6 +48,59 @@ export async function GET(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('arca_order_id', orderId);
+
+      // Fetch order details for E-HDM fiscalization
+      const { data: order } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('arca_order_id', orderId)
+        .single();
+
+      if (order) {
+        // Fetch order items
+        const { data: orderItems } = await supabase
+          .from('order_items')
+          .select('*')
+          .eq('order_id', order.id);
+
+        // Register with E-HDM (Armenian tax authority)
+        if (orderItems && orderItems.length > 0) {
+          try {
+            const ehdmProducts = EHDMService.convertOrderItemsToEHDMProducts(orderItems);
+            const uniqueCode = EHDMService.generateUniqueCode(order.id);
+            
+            // Determine payment type (card for online payments)
+            const ehdmResponse = await ehdmService.printReceipt({
+              products: ehdmProducts,
+              cashAmount: 0,  // Online payment = no cash
+              cardAmount: order.total,
+              uniqueCode,
+            });
+
+            if (ehdmResponse) {
+              // Store E-HDM receipt info in order
+              await supabase
+                .from('orders')
+                .update({
+                  ehdm_receipt_id: ehdmResponse.res?.receiptId,
+                  ehdm_receipt_url: ehdmResponse.link,
+                  ehdm_unique_code: uniqueCode,
+                  ehdm_fiscalized_at: new Date().toISOString(),
+                })
+                .eq('id', order.id);
+              
+              console.log('[E-HDM] Order fiscalized successfully:', order.id);
+            } else {
+              console.error('[E-HDM] Fiscalization failed for order:', order.id);
+              // Note: We don't fail the payment if fiscalization fails
+              // The order is still valid, fiscalization can be retried
+            }
+          } catch (ehdmError) {
+            console.error('[E-HDM] Error during fiscalization:', ehdmError);
+            // Continue with successful payment even if fiscalization fails
+          }
+        }
+      }
 
       return NextResponse.redirect(
         new URL(`/checkout/success?orderId=${orderId}`, request.url)
