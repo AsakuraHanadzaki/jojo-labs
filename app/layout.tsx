@@ -1,5 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { CartProvider } from "@/components/shopping-cart"
 import { CartSidebar } from "@/components/cart-sidebar"
@@ -30,6 +31,7 @@ export default function RootLayout({
             </CartProvider>
           </AuthProvider>
         </TranslationProvider>
+        <Analytics />
       </body>
     </html>
   )
