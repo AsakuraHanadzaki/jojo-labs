@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { ehdmService, EHDMService } from '@/lib/ehdm-service';
+import type { Order, OrderItem } from '@/lib/supabase/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +14,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check payment status with Arca
     const statusResponse = await fetch(
       `${process.env.NEXT_PUBLIC_SITE_URL}/api/payment/status?orderId=${orderId}`,
       { cache: 'no-store' }
@@ -24,80 +24,67 @@ export async function GET(request: NextRequest) {
     }
 
     const statusData = await statusResponse.json();
-
-    // Update order in database
     const supabase = await getSupabaseServerClient();
-    
-    // Order status codes from Arca:
-    // 0 = Registered but not paid
-    // 1 = Pre-authorized (two-stage payment)
-    // 2 = Fully authorized and deposited (SUCCESS)
-    // 3 = Authorization cancelled
-    // 4 = Refunded
-    // 6 = Authorization declined
 
     if (statusData.orderStatus === 2) {
-      // Payment successful - first update order status
       await supabase
         .from('orders')
         .update({
           payment_status: 'completed',
-          arca_payment_status: 2,
-          arca_action_code: statusData.actionCode,
-          payment_completed_at: new Date().toISOString(),
+          admin_notes: `Arca action code: ${statusData.actionCode || 'N/A'}`,
           updated_at: new Date().toISOString(),
         })
-        .eq('arca_order_id', orderId);
+        .eq('tracking_number', orderId);
 
-      // Fetch order details for E-HDM fiscalization
       const { data: order } = await supabase
         .from('orders')
         .select('*')
-        .eq('arca_order_id', orderId)
-        .single();
+        .eq('tracking_number', orderId)
+        .single() as { data: Order | null };
 
       if (order) {
-        // Fetch order items
         const { data: orderItems } = await supabase
           .from('order_items')
           .select('*')
-          .eq('order_id', order.id);
+          .eq('order_id', order.id) as { data: OrderItem[] | null };
 
-        // Register with E-HDM (Armenian tax authority)
         if (orderItems && orderItems.length > 0) {
           try {
             const ehdmProducts = EHDMService.convertOrderItemsToEHDMProducts(orderItems);
             const uniqueCode = EHDMService.generateUniqueCode(order.id);
-            
-            // Determine payment type (card for online payments)
+
             const ehdmResponse = await ehdmService.printReceipt({
               products: ehdmProducts,
-              cashAmount: 0,  // Online payment = no cash
+              cashAmount: 0,
               cardAmount: order.total,
               uniqueCode,
             });
 
             if (ehdmResponse) {
-              // Store E-HDM receipt info in order
+              const receiptId = ehdmResponse.res?.receiptId;
+
               await supabase
                 .from('orders')
                 .update({
-                  ehdm_receipt_id: ehdmResponse.res?.receiptId,
+                  ehdm_receipt_id: receiptId,
                   ehdm_receipt_url: ehdmResponse.link,
                   ehdm_unique_code: uniqueCode,
                   ehdm_fiscalized_at: new Date().toISOString(),
                 })
                 .eq('id', order.id);
-              
-              console.log('[E-HDM] Order fiscalized successfully:', order.id);
-            } else {
-              console.error('[E-HDM] Fiscalization failed for order:', order.id);
-              // Note: We don't fail the payment if fiscalization fails
-              // The order is still valid, fiscalization can be retried
+
+              if (receiptId) {
+                const history = await ehdmService.getHistoryByReceiptId(receiptId);
+                const historyId = history?.id ?? 0;
+
+                await ehdmService.sendEmail(historyId, receiptId, order.customer_email, 1);
+
+                const adminEmail = process.env.ADMIN_EMAIL || 'kara.dsgns@gmail.com';
+                await ehdmService.sendEmail(historyId, receiptId, adminEmail, 1);
+              }
             }
           } catch (ehdmError) {
             console.error('[E-HDM] Error during fiscalization:', ehdmError);
-            // Continue with successful payment even if fiscalization fails
           }
         }
       }
@@ -106,16 +93,14 @@ export async function GET(request: NextRequest) {
         new URL(`/checkout/success?orderId=${orderId}`, request.url)
       );
     } else {
-      // Payment failed or declined
       await supabase
         .from('orders')
         .update({
           payment_status: 'failed',
-          arca_payment_status: statusData.orderStatus,
-          arca_action_code: statusData.actionCode,
+          admin_notes: `Arca status: ${statusData.orderStatus}, action code: ${statusData.actionCode || 'N/A'}`,
           updated_at: new Date().toISOString(),
         })
-        .eq('arca_order_id', orderId);
+        .eq('tracking_number', orderId);
 
       return NextResponse.redirect(
         new URL(
@@ -126,7 +111,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Callback error:', error);
+    console.error('[E-HDM] Callback error:', error);
     return NextResponse.redirect(
       new URL('/checkout/failed?error=system_error', request.url)
     );

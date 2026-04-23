@@ -8,10 +8,10 @@ export async function createClient() {
 }
 
 export async function getSupabaseServerClient(): Promise<SupabaseClientLike> {
-  let cookieStore: ReturnType<typeof cookies> | null = null
+  let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null
 
   try {
-    cookieStore = cookies()
+    cookieStore = await cookies()
   } catch {
     cookieStore = null
   }
@@ -48,5 +48,5 @@ export async function getSupabaseServerClient(): Promise<SupabaseClientLike> {
       getAll: cookieHandler.getAll,
       setAll: cookieHandler.setAll,
     },
-  })
+  }) as unknown as SupabaseClientLike
 }

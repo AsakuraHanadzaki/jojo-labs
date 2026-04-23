@@ -106,10 +106,9 @@ export async function POST(request: NextRequest) {
       const supabase = await getSupabaseServerClient();
       const { error: updateError } = await supabase
         .from('orders')
-        .update({ 
-          arca_order_id: mockOrderId,
+        .update({
+          tracking_number: mockOrderId,
           payment_status: 'pending',
-          arca_payment_status: 0
         })
         .eq('order_number', orderNumber);
 
@@ -341,10 +340,9 @@ export async function POST(request: NextRequest) {
     const supabase = await getSupabaseServerClient();
     await supabase
       .from('orders')
-      .update({ 
-        arca_order_id: arcaData.orderId,
+      .update({
+        tracking_number: arcaData.orderId,
         payment_status: 'pending',
-        arca_payment_status: 0
       })
       .eq('order_number', orderNumber);
 

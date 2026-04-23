@@ -4,6 +4,7 @@ type SupabaseQuery = {
   gt: (...args: any[]) => SupabaseQuery
   order: (...args: any[]) => SupabaseQuery
   insert: (...args: any[]) => SupabaseQuery
+  update: (...args: any[]) => SupabaseQuery
   upsert: (...args: any[]) => SupabaseQuery
   delete: (...args: any[]) => SupabaseQuery
   maybeSingle: () => SupabaseQuery
@@ -30,6 +31,7 @@ const createNoopQuery = (message: string): SupabaseQuery => {
     gt: () => query,
     order: () => query,
     insert: () => query,
+    update: () => query,
     upsert: () => query,
     delete: () => query,
     maybeSingle: () => query,
