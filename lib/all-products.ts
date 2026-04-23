@@ -536,7 +536,7 @@ export const allProducts = {
     inStock: true,
     eco: false, 
   },
- 
+
 } as const
 
 export type Product = (typeof allProducts)[keyof typeof allProducts]

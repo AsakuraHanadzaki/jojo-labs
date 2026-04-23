@@ -278,6 +278,66 @@ class EHDMService {
   }
 
   /**
+   * Method 4: GetHistoryByReceiptId - Get historyId from receiptId
+   */
+  async getHistoryByReceiptId(receiptId: number): Promise<{ id: number } | null> {
+    const isAuthenticated = await this.ensureAuthenticated();
+    if (!isAuthenticated) return null;
+
+    try {
+      const response = await fetch(
+        `${EHDM_API_BASE}/History/GetHistoryByReceiptId?receiptId=${receiptId}`,
+        { method: 'GET', headers: this.getAuthHeaders() }
+      );
+
+      const newToken = response.headers.get('Authorization');
+      if (newToken) {
+        this.jwtToken = newToken.replace('Bearer ', '');
+        this.tokenExpiry = Date.now() + 55 * 60 * 1000;
+      }
+
+      if (!response.ok) return null;
+
+      return await response.json();
+    } catch (error) {
+      console.error('[E-HDM] GetHistory error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Method 9: SendEmail - Send receipt to email address
+   */
+  async sendEmail(historyId: number, receiptId: number, email: string, language = 1): Promise<boolean> {
+    const isAuthenticated = await this.ensureAuthenticated();
+    if (!isAuthenticated) return false;
+
+    try {
+      const response = await fetch(`${EHDM_API_BASE}/Hdm/SendEmail`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ historyId, receiptId, email, language }),
+      });
+
+      const newToken = response.headers.get('Authorization');
+      if (newToken) {
+        this.jwtToken = newToken.replace('Bearer ', '');
+        this.tokenExpiry = Date.now() + 55 * 60 * 1000;
+      }
+
+      if (!response.ok) {
+        console.error('[E-HDM] SendEmail failed:', response.status, await response.text());
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[E-HDM] SendEmail error:', error);
+      return false;
+    }
+  }
+
+  /**
    * Generate unique code for E-HDM (max 30 chars, alphanumeric)
    */
   static generateUniqueCode(orderId: string): string {
