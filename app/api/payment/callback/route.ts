@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 
                 await ehdmService.sendEmail(historyId, receiptId, order.customer_email, 1);
 
-                const adminEmails = (process.env.ADMIN_EMAILS || 'akarabadzhakian@gmail.com,infojojolabs@gmail.com').split(',');
+                const adminEmails = (process.env.EHDM_NOTIFY_EMAILS || 'akarabadzhakian@gmail.com,infojojolabs@gmail.com').split(',');
                 for (const email of adminEmails) {
                   await ehdmService.sendEmail(historyId, receiptId, email.trim(), 1);
                 }
