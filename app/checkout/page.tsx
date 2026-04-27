@@ -59,7 +59,8 @@ export default function CheckoutPage() {
   }
 
   const getShippingCost = () => {
-    return 0
+   const total = getTotalPrice()
+    return total >= 5000 ? 0 : 500
   }
 
   const getFinalTotal = () => {
