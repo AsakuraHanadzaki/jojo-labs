@@ -12,8 +12,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useTranslation } from "@/hooks/use-translation"
 import { fetchProducts } from "@/lib/products-service"
 import type { Product } from "@/lib/supabase/types"
-import { allProducts } from "@/lib/all-products"
-
 export default function FaceCarePage() {
   const { t, language } = useTranslation()
   const searchParams = useSearchParams()
@@ -23,29 +21,29 @@ export default function FaceCarePage() {
   const [loading, setLoading] = useState(true)
 
   const faceCareCategories = [
-    "Serums",
-    "Essences",
-    "Treatments",
-    "Masks",
-    "Toners",
-    "Sunscreens",
-    "Ampoules",
-    "Cleansers",
-    "Moisturizers",
-    "Exfoliants",
+    "serums",
+    "essences",
+    "treatments",
+    "masks",
+    "toners",
+    "sunscreens",
+    "ampoules",
+    "cleansers",
+    "moisturizers",
+    "exfoliants",
   ]
 
   const categories = [
     { name: t("facecare.cat.all"), filter: "All" },
-    { name: t("facecare.cat.serums"), filter: "Serums" },
-    { name: t("facecare.cat.essences"), filter: "Essences" },
-    { name: t("facecare.cat.treatments"), filter: "Treatments" },
-    { name: t("facecare.cat.masks"), filter: "Masks" },
-    { name: t("facecare.cat.toners"), filter: "Toners" },
-    { name: t("facecare.cat.sunscreens"), filter: "Sunscreens" },
-    { name: t("facecare.cat.cleansers"), filter: "Cleansers" },
-    { name: t("facecare.cat.moisturizers"), filter: "Moisturizers" },
-    { name: t("facecare.cat.exfoliants"), filter: "Exfoliants" },
+    { name: t("facecare.cat.serums"), filter: "serums" },
+    { name: t("facecare.cat.essences"), filter: "essences" },
+    { name: t("facecare.cat.treatments"), filter: "treatments" },
+    { name: t("facecare.cat.masks"), filter: "masks" },
+    { name: t("facecare.cat.toners"), filter: "toners" },
+    { name: t("facecare.cat.sunscreens"), filter: "sunscreens" },
+    { name: t("facecare.cat.cleansers"), filter: "cleansers" },
+    { name: t("facecare.cat.moisturizers"), filter: "moisturizers" },
+    { name: t("facecare.cat.exfoliants"), filter: "exfoliants" },
   ]
 
   const [selectedCategory, setSelectedCategory] = useState("All")
@@ -57,63 +55,41 @@ export default function FaceCarePage() {
       setLoading(true)
       try {
         const dbProducts = await fetchProducts()
-        console.log("[v0] Fetched products from database:", dbProducts.length)
 
         if (dbProducts.length > 0) {
-          const faceCareProducts = dbProducts.filter((p) => faceCareCategories.includes(p.category))
-          console.log("[v0] Filtered face care products:", faceCareProducts.length)
-          // Debug: Log each product's image URL
-          faceCareProducts.forEach(p => console.log("[v0] FaceCare product:", p.name, "| Image URL:", p.image))
+          const faceCareProducts = dbProducts.filter((p) => faceCareCategories.includes((p as any).category_id))
 
           let filteredByConcern = faceCareProducts
           if (concernParam) {
-            filteredByConcern = faceCareProducts.filter((p) => {
-              if (!p.concerns || !Array.isArray(p.concerns)) return false
-
-              const concernMapping: Record<string, string[]> = {
-                hydration: ["dehydration", "hydration", "dryness"],
-                acne: ["acne", "pimples", "breakouts"],
-                aging: ["aging", "fine lines", "wrinkles", "anti-aging"],
-                pigmentation: ["pigmentation", "dark spots", "hyperpigmentation", "melasma"],
-                pores: ["pores", "blackheads", "enlarged pores"],
-                sensitivity: ["sensitivity", "redness", "irritation", "rosacea"],
-                texture: ["texture", "dullness", "uneven texture"],
-                dryness: ["dryness", "dry skin"],
-              }
-
-              const matchingConcerns = concernMapping[concernParam] || [concernParam]
-              return p.concerns.some((concern: string) =>
+            const concernMapping: Record<string, string[]> = {
+              hydration: ["dehydration", "hydration", "dryness"],
+              acne: ["acne", "pimples", "breakouts"],
+              aging: ["aging", "fine lines", "wrinkles", "anti-aging"],
+              pigmentation: ["pigmentation", "dark spots", "hyperpigmentation", "melasma"],
+              pores: ["pores", "blackheads", "enlarged pores"],
+              sensitivity: ["sensitivity", "redness", "irritation", "rosacea"],
+              texture: ["texture", "dullness", "uneven texture"],
+              dryness: ["dryness", "dry skin"],
+            }
+            const matchingConcerns = concernMapping[concernParam] || [concernParam]
+            const byConcern = faceCareProducts.filter((p) => {
+              const concerns = (p as any).concerns
+              if (!concerns || !Array.isArray(concerns) || concerns.length === 0) return false
+              return concerns.some((concern: string) =>
                 matchingConcerns.some((mc) => concern.toLowerCase().includes(mc.toLowerCase())),
               )
             })
+            filteredByConcern = byConcern.length > 0 ? byConcern : faceCareProducts
           }
 
           const sortedProducts = sortProductsByStock(filteredByConcern)
           setProducts(sortedProducts)
         } else {
-          // Fallback to hardcoded products
-          console.log("[v0] Using fallback hardcoded products")
-          const fallbackProducts = Object.values(allProducts)
-            .filter((p) => faceCareCategories.includes(p.category) && p.inStock !== false)
-            .map((p) => ({
-              ...p,
-              stock: 100,
-              in_stock: p.inStock,
-              low_stock_threshold: 10,
-            }))
-          setProducts(fallbackProducts as unknown as Product[])
+          setProducts([])
         }
       } catch (error) {
         console.error("[v0] Error loading products:", error)
-        const fallbackProducts = Object.values(allProducts)
-          .filter((p) => faceCareCategories.includes(p.category) && p.inStock !== false)
-          .map((p) => ({
-            ...p,
-            stock: 100,
-            in_stock: p.inStock,
-            low_stock_threshold: 10,
-          }))
-        setProducts(fallbackProducts as unknown as Product[])
+        setProducts([])
       }
       setLoading(false)
     }
@@ -140,7 +116,7 @@ export default function FaceCarePage() {
   }
 
   const filteredProducts =
-    selectedCategory === "All" ? products : products.filter((product) => product.category === selectedCategory)
+    selectedCategory === "All" ? products : products.filter((product) => (product as any).category_id === selectedCategory)
 
   const sortedFilteredProducts = sortProductsByStock(filteredProducts)
 
@@ -252,7 +228,7 @@ export default function FaceCarePage() {
                 description={getProductDescription(product)}
                 price={product.price}
                 image={product.image}
-                category={product.category}
+                category={(product as any).category_id}
                 stock={product.stock}
                 inStock={product.in_stock}
                 lowStockThreshold={product.low_stock_threshold}
