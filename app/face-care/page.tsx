@@ -21,29 +21,29 @@ export default function FaceCarePage() {
   const [loading, setLoading] = useState(true)
 
   const faceCareCategories = [
-    "serums",
-    "essences",
-    "treatments",
-    "masks",
-    "toners",
-    "sunscreens",
-    "ampoules",
-    "cleansers",
-    "moisturizers",
-    "exfoliants",
+    "Serums",
+    "Essences",
+    "Treatments",
+    "Masks",
+    "Toners",
+    "Sunscreens",
+    "Ampoules",
+    "Cleansers",
+    "Moisturizers",
+    "Exfoliants",
   ]
 
   const categories = [
     { name: t("facecare.cat.all"), filter: "All" },
-    { name: t("facecare.cat.serums"), filter: "serums" },
-    { name: t("facecare.cat.essences"), filter: "essences" },
-    { name: t("facecare.cat.treatments"), filter: "treatments" },
-    { name: t("facecare.cat.masks"), filter: "masks" },
-    { name: t("facecare.cat.toners"), filter: "toners" },
-    { name: t("facecare.cat.sunscreens"), filter: "sunscreens" },
-    { name: t("facecare.cat.cleansers"), filter: "cleansers" },
-    { name: t("facecare.cat.moisturizers"), filter: "moisturizers" },
-    { name: t("facecare.cat.exfoliants"), filter: "exfoliants" },
+    { name: t("facecare.cat.serums"), filter: "Serums" },
+    { name: t("facecare.cat.essences"), filter: "Essences" },
+    { name: t("facecare.cat.treatments"), filter: "Treatments" },
+    { name: t("facecare.cat.masks"), filter: "Masks" },
+    { name: t("facecare.cat.toners"), filter: "Toners" },
+    { name: t("facecare.cat.sunscreens"), filter: "Sunscreens" },
+    { name: t("facecare.cat.cleansers"), filter: "Cleansers" },
+    { name: t("facecare.cat.moisturizers"), filter: "Moisturizers" },
+    { name: t("facecare.cat.exfoliants"), filter: "Exfoliants" },
   ]
 
   const [selectedCategory, setSelectedCategory] = useState("All")
@@ -57,7 +57,7 @@ export default function FaceCarePage() {
         const dbProducts = await fetchProducts()
 
         if (dbProducts.length > 0) {
-          const faceCareProducts = dbProducts.filter((p) => faceCareCategories.includes((p as any).category_id))
+          const faceCareProducts = dbProducts.filter((p) => faceCareCategories.includes(p.category))
 
           let filteredByConcern = faceCareProducts
           if (concernParam) {
@@ -116,7 +116,7 @@ export default function FaceCarePage() {
   }
 
   const filteredProducts =
-    selectedCategory === "All" ? products : products.filter((product) => (product as any).category_id === selectedCategory)
+    selectedCategory === "All" ? products : products.filter((product) => product.category === selectedCategory)
 
   const sortedFilteredProducts = sortProductsByStock(filteredProducts)
 
@@ -228,7 +228,7 @@ export default function FaceCarePage() {
                 description={getProductDescription(product)}
                 price={product.price}
                 image={product.image}
-                category={(product as any).category_id}
+                category={product.category}
                 stock={product.stock}
                 inStock={product.in_stock}
                 lowStockThreshold={product.low_stock_threshold}

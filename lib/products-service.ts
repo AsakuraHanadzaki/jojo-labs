@@ -9,27 +9,19 @@ export async function fetchProducts(category?: string): Promise<Product[]> {
     let query = supabase.from("products").select("*")
 
     if (category && category !== "All") {
-      query = query.eq("category_id", category)
+      query = query.eq("category", category)
     }
 
     query = query.eq("in_stock", true).gt("stock", 0)
 
-    const { data, error } = await query.order("stock", { ascending: false })
+    const { data, error } = await query.order("stock", { ascending: false }).order("name")
 
     if (error) {
       return []
     }
 
-    return (data || []).map((item: any) => ({
-      ...item,
-      name: item.name_en ?? item.name ?? '',
-      description: item.description_en ?? item.description ?? '',
-      benefits: item.benefits_en ?? item.benefits ?? [],
-      how_to_use: item.how_to_use_en ?? item.how_to_use ?? '',
-      skin_type: item.skin_type_en ? [item.skin_type_en] : (item.skin_type ?? []),
-    })) as any[]
+    return data || []
   } catch (error) {
-    console.log("[v0] fetchProducts: Using fallback data")
     return []
   }
 }

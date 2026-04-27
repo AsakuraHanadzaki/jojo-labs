@@ -52,18 +52,18 @@ export async function GET(request: NextRequest) {
           try {
             const { data: products } = await supabase
               .from('products')
-              .select('id, numeric_id, name_en')
+              .select('id, numeric_id, name')
               .in('id', orderItems.map(i => i.product_id));
 
-            const productMap: Record<string, { numeric_id: number; name_en: string }> = {};
+            const productMap: Record<string, { numeric_id: number; name: string }> = {};
             for (const p of products || []) {
-              productMap[p.id] = { numeric_id: p.numeric_id, name_en: p.name_en };
+              productMap[p.id] = { numeric_id: p.numeric_id, name: p.name };
             }
 
             const itemsWithNumericId = orderItems.map(i => ({
               ...i,
               numeric_id: productMap[i.product_id]?.numeric_id,
-              product_name: i.product_name || productMap[i.product_id]?.name_en || i.product_id,
+              product_name: i.product_name || productMap[i.product_id]?.name || i.product_id,
             }));
 
             const ehdmProducts = EHDMService.convertOrderItemsToEHDMProducts(itemsWithNumericId);
