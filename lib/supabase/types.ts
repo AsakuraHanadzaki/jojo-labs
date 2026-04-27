@@ -12,6 +12,7 @@ export interface Product {
   original_price?: number
   image: string
   category_id: string
+  category: string
   brand: string
   size: string
   benefits: string[]
