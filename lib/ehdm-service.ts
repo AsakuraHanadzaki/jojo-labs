@@ -356,13 +356,14 @@ class EHDMService {
       quantity: number;
       unit_price: number;
       total_price: number;
+      numeric_id?: number;
     }>,
     vatType: 1 | 2 | 3 | 7 = 1  // Default to VAT taxable
   ): EHDMProduct[] {
     return items.map((item, index) => ({
       adgCode: '3304',  // HS code for cosmetics/skincare
-      goodCode: item.product_id,
-      goodName: item.product_name.slice(0, 50),  // Max 50 chars
+      goodCode: String(item.numeric_id),
+      goodName: item.product_name.slice(0, 50),
       quantity: item.quantity,
       unit: 'հատ',  // "piece" in Armenian
       price: item.unit_price,

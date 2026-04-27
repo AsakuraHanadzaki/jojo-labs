@@ -9,24 +9,25 @@ export async function fetchProducts(category?: string): Promise<Product[]> {
     let query = supabase.from("products").select("*")
 
     if (category && category !== "All") {
-      query = query.eq("category", category)
+      query = query.eq("category_id", category)
     }
 
     query = query.eq("in_stock", true).gt("stock", 0)
 
-    const { data, error } = await query.order("stock", { ascending: false }).order("name")
+    const { data, error } = await query.order("stock", { ascending: false })
 
     if (error) {
-      console.log("[v0] fetchProducts: Using fallback, Supabase unavailable")
       return []
     }
 
-    console.log("[v0] fetchProducts: Successfully fetched", data?.length || 0, "products")
-    // Debug: Log image URLs to verify they're coming from database
-    if (data) {
-      data.forEach(p => console.log("[v0] Product:", p.name, "| Image:", p.image))
-    }
-    return data || []
+    return (data || []).map((item: any) => ({
+      ...item,
+      name: item.name_en ?? item.name ?? '',
+      description: item.description_en ?? item.description ?? '',
+      benefits: item.benefits_en ?? item.benefits ?? [],
+      how_to_use: item.how_to_use_en ?? item.how_to_use ?? '',
+      skin_type: item.skin_type_en ? [item.skin_type_en] : (item.skin_type ?? []),
+    })) as any[]
   } catch (error) {
     console.log("[v0] fetchProducts: Using fallback data")
     return []
