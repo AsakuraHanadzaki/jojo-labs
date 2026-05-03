@@ -26,7 +26,7 @@ export default function AboutPage() {
         {/* Story Section */}
         <section className="mb-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
+            <div className="text-center space-y-4">
               <h2 className="text-3xl font-bold text-gray-900">{t("about.story")}</h2>
               <div className="space-y-4 text-gray-600 leading-relaxed">
                 <p>{t("about.story.p1")}</p>
