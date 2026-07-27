@@ -32,6 +32,8 @@ export interface Product {
   in_stock: boolean
   is_new: boolean
   is_bestseller: boolean
+  is_featured: boolean
+  featured_order?: number
   created_at: string
   updated_at: string
 }

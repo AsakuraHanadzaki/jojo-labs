@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
 import { HeaderWithSearch } from "@/components/header-with-search"
 import { ConcernSelector } from "@/components/concern-selector"
-import { RoutineFinderPopup } from "@/components/routine-finder-popup"
 import { useTranslation } from "@/hooks/use-translation"
-import { fetchProducts, getTranslatedField } from "@/lib/products-service"
+import { fetchFeaturedProducts, getTranslatedField } from "@/lib/products-service"
 import type { Product } from "@/lib/supabase/types"
 import { useEffect, useState } from "react"
 
@@ -47,8 +46,7 @@ export default function HomePage() {
   useEffect(() => {
     async function loadProducts() {
       try {
-        const products = await fetchProducts()
-        const featured = products.slice(0, 3)
+        const featured = await fetchFeaturedProducts(3)
         setFeaturedProducts(featured)
       } catch (error) {
         console.error("Error loading featured products:", error)
@@ -62,8 +60,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       <HeaderWithSearch />
-
-      <RoutineFinderPopup />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <ConcernSelector />
@@ -109,9 +105,9 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <section className="bg-gradient-to-br from-sky-50 to-sky-100 rounded-3xl p-8 lg:p-12 text-center">
+        <section className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-3xl p-8 lg:p-12 text-center">
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-8 h-8 text-sky-600" />
+            <Sparkles className="w-8 h-8 text-green-600" />
           </div>
           <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">{t("home.routinefinder")}</h2>
           <p className="text-gray-600 mb-8 max-w-lg mx-auto">{t("home.routinefinder.desc")}</p>

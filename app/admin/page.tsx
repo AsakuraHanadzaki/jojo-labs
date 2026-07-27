@@ -224,6 +224,20 @@ export default function AdminPage() {
     }
   }
 
+  // Toggle whether a product is featured on the homepage
+  const updateFeatured = async (productId: string, isFeatured: boolean) => {
+    const { error } = await supabase
+      .from("products")
+      .update({ is_featured: isFeatured })
+      .eq("id", productId)
+
+    if (!error) {
+      setProducts(products.map((p) => (p.id === productId ? { ...p, is_featured: isFeatured } : p)))
+    } else {
+      alert("Failed to update featured status")
+    }
+  }
+
   // Update product price
   const updatePrice = async (productId: string, newPrice: string) => {
     const { error } = await supabase
@@ -796,6 +810,7 @@ export default function AdminPage() {
                       <TableHead>Price</TableHead>
                       <TableHead>Stock</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Featured</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -909,6 +924,21 @@ export default function AdminPage() {
                               In Stock
                             </Badge>
                           )}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => updateFeatured(product.id, !product.is_featured)}
+                            title={product.is_featured ? "Remove from homepage" : "Feature on homepage"}
+                            aria-label={product.is_featured ? "Remove from homepage" : "Feature on homepage"}
+                          >
+                            <Star
+                              className={`w-5 h-5 ${
+                                product.is_featured ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                              }`}
+                            />
+                          </Button>
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">

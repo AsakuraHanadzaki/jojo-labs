@@ -33,6 +33,41 @@ export async function fetchProducts(category?: string): Promise<Product[]> {
   }
 }
 
+// Fetch featured products for the homepage.
+// Returns admin-selected featured products; falls back to first in-stock products if none are set.
+export async function fetchFeaturedProducts(limit = 3): Promise<Product[]> {
+  try {
+    const supabase = getSupabaseBrowserClient()
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("is_featured", true)
+      .eq("in_stock", true)
+      .gt("stock", 0)
+      .order("featured_order", { ascending: true, nullsFirst: false })
+      .order("name")
+
+    if (error) {
+      console.log("[v0] fetchFeaturedProducts: Supabase unavailable, falling back")
+      const all = await fetchProducts()
+      return all.slice(0, limit)
+    }
+
+    // If the admin hasn't marked any products as featured, fall back to the first products
+    if (!data || data.length === 0) {
+      const all = await fetchProducts()
+      return all.slice(0, limit)
+    }
+
+    return data
+  } catch (error) {
+    console.log("[v0] fetchFeaturedProducts: error, falling back", error)
+    const all = await fetchProducts()
+    return all.slice(0, limit)
+  }
+}
+
 // Fetch single product by ID
 export async function fetchProductById(id: string): Promise<Product | null> {
   try {
