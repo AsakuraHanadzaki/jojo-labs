@@ -8,10 +8,11 @@ export async function createClient() {
 }
 
 export async function getSupabaseServerClient(): Promise<SupabaseClientLike> {
-  let cookieStore: ReturnType<typeof cookies> | null = null
+  let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null
 
   try {
-    cookieStore = cookies()
+    // In Next.js 16, cookies() is async and must be awaited
+    cookieStore = await cookies()
   } catch {
     cookieStore = null
   }
@@ -19,7 +20,7 @@ export async function getSupabaseServerClient(): Promise<SupabaseClientLike> {
   const cookieHandler = cookieStore
     ? {
         getAll() {
-          return cookieStore.getAll()
+          return cookieStore!.getAll()
         },
         setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
           try {
