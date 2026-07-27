@@ -2,7 +2,7 @@
 
 // Homepage - Updated March 2026
 import Link from "next/link"
-import { Sparkles, ArrowRight } from "lucide-react"
+import { Sparkles, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
 import { HeaderWithSearch } from "@/components/header-with-search"
@@ -105,21 +105,58 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <section className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-3xl p-8 lg:p-12 text-center">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-8 h-8 text-green-600" />
+        <section className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-3xl p-8 lg:p-12">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+            {/* Left: message + CTA */}
+            <div>
+              <div className="inline-flex items-center gap-2 bg-white rounded-full px-4 py-1.5 mb-6">
+                <Sparkles className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-medium text-green-700">{t("home.rf.badge")}</span>
+              </div>
+              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4 text-balance leading-tight">
+                {t("home.rf.title")}
+              </h2>
+              <p className="text-gray-600 mb-6 leading-relaxed text-pretty">{t("home.rf.desc")}</p>
+              <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  {t("home.rf.trust1")}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  {t("home.rf.trust2")}
+                </div>
+              </div>
+              <Link href="/routine-finder">
+                <Button
+                  size="lg"
+                  className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 text-sm font-medium tracking-wide"
+                >
+                  {t("home.cta.discover")}
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+
+            {/* Right: how it works steps */}
+            <div className="flex flex-col gap-4">
+              {[
+                { title: t("home.rf.step1.title"), desc: t("home.rf.step1.desc") },
+                { title: t("home.rf.step2.title"), desc: t("home.rf.step2.desc") },
+                { title: t("home.rf.step3.title"), desc: t("home.rf.step3.desc") },
+              ].map((step, idx) => (
+                <div key={idx} className="flex items-start gap-4 bg-white rounded-2xl p-5">
+                  <div className="flex-shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-semibold">
+                    {idx + 1}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-1">{step.title}</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">{t("home.routinefinder")}</h2>
-          <p className="text-gray-600 mb-8 max-w-lg mx-auto">{t("home.routinefinder.desc")}</p>
-          <Link href="/routine-finder">
-            <Button
-              size="lg"
-              className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 text-sm font-medium tracking-wide"
-            >
-              {t("home.cta.discover")}
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-          </Link>
         </section>
       </main>
 
