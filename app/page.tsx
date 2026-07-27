@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
 import { HeaderWithSearch } from "@/components/header-with-search"
 import { ConcernSelector } from "@/components/concern-selector"
+import { RoutineFinderPopup } from "@/components/routine-finder-popup"
 import { useTranslation } from "@/hooks/use-translation"
 import { fetchProducts, getTranslatedField } from "@/lib/products-service"
 import type { Product } from "@/lib/supabase/types"
@@ -62,41 +63,9 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       <HeaderWithSearch />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <section className="mb-16 bg-gradient-to-br from-green-50 to-emerald-100 rounded-3xl p-8 lg:p-12">
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-white rounded-full px-4 py-1.5 mb-6">
-                <Sparkles className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-700">{t("home.hero.badge")}</span>
-              </div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 text-balance leading-tight">
-                {t("home.hero.title")}
-              </h1>
-              <p className="text-gray-600 mb-8 leading-relaxed text-pretty">{t("home.hero.desc")}</p>
-              <Link href="/routine-finder">
-                <Button
-                  size="lg"
-                  className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 text-sm font-medium tracking-wide"
-                >
-                  {t("home.hero.cta")}
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
-            <div className="flex flex-col gap-4">
-              {[t("home.hero.step1"), t("home.hero.step2"), t("home.hero.step3")].map((step, idx) => (
-                <div key={idx} className="flex items-center gap-4 bg-white rounded-2xl p-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-semibold">
-                    {idx + 1}
-                  </div>
-                  <p className="font-medium text-gray-900">{step}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+      <RoutineFinderPopup />
 
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <ConcernSelector />
 
         <section className="mb-12">
@@ -140,9 +109,9 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <section className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-3xl p-8 lg:p-12 text-center">
+        <section className="bg-gradient-to-br from-sky-50 to-sky-100 rounded-3xl p-8 lg:p-12 text-center">
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-8 h-8 text-green-600" />
+            <Sparkles className="w-8 h-8 text-sky-600" />
           </div>
           <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">{t("home.routinefinder")}</h2>
           <p className="text-gray-600 mb-8 max-w-lg mx-auto">{t("home.routinefinder.desc")}</p>
