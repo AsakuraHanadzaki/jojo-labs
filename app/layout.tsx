@@ -6,6 +6,7 @@ import { CartSidebar } from "@/components/cart-sidebar"
 import { TranslationProvider } from "@/hooks/use-translation"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/hooks/use-auth"
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "JoJo Labs - Premium Skincare & Cosmetics",
@@ -30,6 +31,7 @@ export default function RootLayout({
             </CartProvider>
           </AuthProvider>
         </TranslationProvider>
+        <Analytics />
       </body>
     </html>
   )
