@@ -57,12 +57,21 @@ export async function POST(request: NextRequest) {
       if (error.code === "23505") {
         return NextResponse.json({ error: "This code already exists" }, { status: 409 })
       }
-      throw error
+      // Surface the real Postgres error so failures are diagnosable in production
+      console.error("[v0] Promo code insert error:", error)
+      const detail =
+        error.code === "42P01"
+          ? "The promo_codes table does not exist in this database. Run the promo codes migration against this environment's database."
+          : error.message || "Failed to create promo code"
+      return NextResponse.json({ error: detail, code: error.code }, { status: 500 })
     }
     return NextResponse.json(data)
-  } catch (error) {
-    console.error("Error creating promo code:", error)
-    return NextResponse.json({ error: "Failed to create promo code" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[v0] Error creating promo code:", error)
+    return NextResponse.json(
+      { error: error?.message || "Failed to create promo code" },
+      { status: 500 },
+    )
   }
 }
 
