@@ -32,6 +32,12 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
 
+  // Promocode state
+  const [promoInput, setPromoInput] = useState("")
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountAmount: number } | null>(null)
+  const [promoError, setPromoError] = useState("")
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false)
+
   useEffect(() => {
     if (user) {
       setEmail(user.email || "")
@@ -63,8 +69,53 @@ export default function CheckoutPage() {
     return total >= 5000 ? 0 : 500
   }
 
+  const getDiscount = () => {
+    if (!appliedPromo) return 0
+    // Never discount more than the items subtotal
+    return Math.min(appliedPromo.discountAmount, getTotalPrice())
+  }
+
   const getFinalTotal = () => {
-    return getTotalPrice() + getShippingCost()
+    return Math.max(0, getTotalPrice() + getShippingCost() - getDiscount())
+  }
+
+  const handleApplyPromo = async () => {
+    const code = promoInput.trim()
+    if (!code) return
+    setIsValidatingPromo(true)
+    setPromoError("")
+    try {
+      const res = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal: getTotalPrice() }),
+      })
+      const data = await res.json()
+      if (data.valid) {
+        setAppliedPromo({ code: data.code, discountAmount: data.discountAmount })
+        setPromoError("")
+      } else {
+        setAppliedPromo(null)
+        const messages: Record<string, string> = {
+          not_found: "Invalid promo code",
+          inactive: "This promo code is no longer active",
+          expired: "This promo code has expired",
+          usage_limit_reached: "This promo code has reached its usage limit",
+          min_order_not_met: `Minimum order of AMD${data.minOrderAmount?.toLocaleString?.() || ""} required`,
+        }
+        setPromoError(messages[data.error] || "Could not apply promo code")
+      }
+    } catch {
+      setPromoError("Could not apply promo code")
+    } finally {
+      setIsValidatingPromo(false)
+    }
+  }
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null)
+    setPromoInput("")
+    setPromoError("")
   }
 
   const handleCompleteOrder = async () => {
@@ -98,6 +149,8 @@ export default function CheckoutPage() {
         shipping_postal_code: (document.getElementById('postalCode') as HTMLInputElement)?.value || '',
         subtotal: getTotalPrice(),
         shipping_cost: getShippingCost(),
+        discount_amount: getDiscount(),
+        promo_code: appliedPromo?.code || null,
         total: total,
         status: "pending",
         payment_method: "card",
@@ -107,6 +160,15 @@ export default function CheckoutPage() {
       .single();
 
     if (orderError) throw orderError;
+
+    // Increment promo code usage (non-blocking, must not affect payment)
+    if (appliedPromo?.code) {
+      try {
+        await supabase.rpc("increment_promo_usage", { p_code: appliedPromo.code });
+      } catch (promoErr) {
+        console.log("[v0] Failed to increment promo usage:", promoErr);
+      }
+    }
 
     // Create order items
     if (order) {
@@ -351,6 +413,57 @@ export default function CheckoutPage() {
                     <span>{getShippingCost() === 0 ? t("checkout.free") : `AMD${getShippingCost()}`}</span>
                   </div>
                   {getShippingCost() === 0 && <p className="text-xs text-green-600">{t("checkout.freeshipping")}</p>}
+                  {appliedPromo && (
+                    <div className="flex justify-between text-sm text-green-700">
+                      <span>{t("checkout.discount")} ({appliedPromo.code})</span>
+                      <span>-AMD{getDiscount().toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Promo code */}
+                <div className="space-y-2">
+                  <Label htmlFor="promo" className="text-sm">
+                    {t("checkout.promo")}
+                  </Label>
+                  {appliedPromo ? (
+                    <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                      <span className="text-sm font-medium text-green-800">{appliedPromo.code}</span>
+                      <button
+                        type="button"
+                        onClick={handleRemovePromo}
+                        className="text-sm text-green-700 underline hover:text-green-900"
+                      >
+                        {t("checkout.remove")}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        id="promo"
+                        placeholder={t("checkout.promo.placeholder")}
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                            e.preventDefault()
+                            handleApplyPromo()
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleApplyPromo}
+                        disabled={isValidatingPromo || !promoInput.trim()}
+                      >
+                        {isValidatingPromo ? "..." : t("checkout.apply")}
+                      </Button>
+                    </div>
+                  )}
+                  {promoError && <p className="text-xs text-red-600">{promoError}</p>}
                 </div>
 
                 <Separator />
