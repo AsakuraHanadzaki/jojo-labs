@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { PromoCodesManager } from "@/components/admin/promo-codes-manager"
+import { VisitsAnalytics } from "@/components/admin/visits-analytics"
 import {
   Dialog,
   DialogContent,
@@ -41,6 +43,8 @@ import {
   Trash2,
   Upload,
   ImageIcon,
+  Ticket,
+  BarChart3,
 } from "lucide-react"
 import type { Product, Order, CustomerRequest, ProductRating } from "@/lib/supabase/types"
 import Link from "next/link"
@@ -592,7 +596,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="products" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="products">
               <Package className="w-4 h-4 mr-2" />
               Products
@@ -612,6 +616,14 @@ export default function AdminPage() {
             <TabsTrigger value="blogs">
               <FileText className="w-4 h-4 mr-2" />
               Blogs
+            </TabsTrigger>
+            <TabsTrigger value="promocodes">
+              <Ticket className="w-4 h-4 mr-2" />
+              Promo Codes
+            </TabsTrigger>
+            <TabsTrigger value="visits">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Visits
             </TabsTrigger>
           </TabsList>
 
@@ -1310,6 +1322,16 @@ export default function AdminPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Promo Codes Tab */}
+          <TabsContent value="promocodes" className="space-y-6">
+            <PromoCodesManager />
+          </TabsContent>
+
+          {/* Website Visits Tab */}
+          <TabsContent value="visits" className="space-y-6">
+            <VisitsAnalytics />
           </TabsContent>
         </Tabs>
       </main>

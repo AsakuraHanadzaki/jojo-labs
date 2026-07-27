@@ -6,6 +6,7 @@ import { CartSidebar } from "@/components/cart-sidebar"
 import { TranslationProvider } from "@/hooks/use-translation"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/hooks/use-auth"
+import { VisitTracker } from "@/components/visit-tracker"
 
 export const metadata: Metadata = {
   title: "JoJo Labs - Premium Skincare & Cosmetics",
@@ -27,6 +28,7 @@ export default function RootLayout({
               {children}
               <CartSidebar />
               <Toaster />
+              <VisitTracker />
             </CartProvider>
           </AuthProvider>
         </TranslationProvider>
