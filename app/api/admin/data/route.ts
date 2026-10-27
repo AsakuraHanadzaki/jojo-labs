@@ -1,12 +1,23 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { verifySignedValue, verifySessionPayload } from "@/lib/admin/auth"
 
 async function requireAdminSession() {
-  const cookieStore = await cookies()
-  const session = cookieStore.get("admin_session")
+  const store = await cookies()
+  const signedCookie = store.get("admin_session")?.value
 
-  if (session?.value !== "authenticated") {
+  if (!signedCookie) {
+    throw new Error("Unauthorized")
+  }
+
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_LOGIN_SECRET
+  if (!secret) {
+    throw new Error("Unauthorized")
+  }
+
+  const value = verifySignedValue(signedCookie, secret)
+  if (!value || !verifySessionPayload(value)) {
     throw new Error("Unauthorized")
   }
 
@@ -18,7 +29,12 @@ export async function GET() {
     const supabase = await requireAdminSession()
 
     const [products, orders, requests, ratings, blogs] = await Promise.all([
-      supabase.from("products").select("*").order("name"),
+      supabase
+        .from("products")
+        .select(
+          "id, name, name_ru, name_hy, description, description_ru, description_hy, price, category, stock, low_stock_threshold, in_stock, image, rating, reviews, eco, benefits, how_to_use, ingredients, concerns, created_at, updated_at",
+        )
+        .order("name"),
       supabase.from("orders").select("*, order_items(*)").order("created_at", { ascending: false }),
       supabase.from("customer_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("product_ratings").select("*").order("created_at", { ascending: false }),
@@ -46,7 +62,7 @@ export async function POST(request: Request) {
       case "update-stock": {
         const { error } = await supabase
           .from("products")
-          .update({ stock: body.newStock, in_stock: body.newStock > 0 })
+          .update({ stock: Number(body.newStock), in_stock: Number(body.newStock) > 0 })
           .eq("id", body.productId)
 
         if (error) throw error
@@ -56,7 +72,7 @@ export async function POST(request: Request) {
       case "update-price": {
         const { error } = await supabase
           .from("products")
-          .update({ price: body.newPrice })
+          .update({ price: String(body.newPrice) })
           .eq("id", body.productId)
 
         if (error) throw error
@@ -64,7 +80,18 @@ export async function POST(request: Request) {
       }
 
       case "add-product": {
-        const { error } = await supabase.from("products").insert(body.product)
+        if (!body.product || !body.product.name || !body.product.price) {
+          return NextResponse.json({ error: "Name and price required" }, { status: 400 })
+        }
+
+        const { error } = await supabase.from("products").insert({
+          ...body.product,
+          price: String(body.product.price),
+          stock: Number(body.product.stock ?? 0),
+          low_stock_threshold: Number(body.product.low_stock_threshold ?? 10),
+          in_stock: Number(body.product.stock ?? 0) > 0,
+        })
+
         if (error) throw error
         return NextResponse.json({ ok: true })
       }
