@@ -1,6 +1,13 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { hashSecret, isRateLimited, registerLoginAttempt, safeEqual, signValue, encodeSessionPayload } from "@/lib/admin/auth"
+import {
+  encodeSessionPayload,
+  hashSecret,
+  isRateLimited,
+  registerLoginAttempt,
+  safeEqual,
+  signValue,
+} from "@/lib/admin/auth"
 
 export async function POST(request: Request) {
   try {
