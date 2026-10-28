@@ -1,48 +1,76 @@
+import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
-import { type NextRequest, NextResponse } from "next/server"
+import { verifySignedValue, verifySessionPayload } from "@/lib/admin/auth"
 
-// GET - Fetch all orders with items
+async function requireAdminSession() {
+  const store = await cookies()
+  const signedCookie = store.get("admin_session")?.value
+
+  if (!signedCookie) {
+    throw new Error("Unauthorized")
+  }
+
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_LOGIN_SECRET
+  if (!secret) {
+    throw new Error("Unauthorized")
+  }
+
+  const value = verifySignedValue(signedCookie, secret)
+  if (!value || !verifySessionPayload(value)) {
+    throw new Error("Unauthorized")
+  }
+
+  return getSupabaseServerClient()
+}
+
 export async function GET() {
   try {
-    const supabase = await getSupabaseServerClient()
+    const supabase = await requireAdminSession()
 
     const { data, error } = await supabase
       .from("orders")
-      .select("*, order_items(*)")
+      .select(
+        "id, order_number, customer_name, customer_email, status, total_price, tracking_number, carrier, created_at, updated_at, order_items(*)",
+      )
       .order("created_at", { ascending: false })
 
     if (error) throw error
 
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error("Error fetching orders:", error)
-    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
+    return NextResponse.json({ orders: data || [] })
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 }
 
-// POST - Create new order and decrease stock
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const supabase = await getSupabaseServerClient()
+    const supabase = await requireAdminSession()
     const body = await request.json()
 
     const { order, items } = body
 
-    // Generate order number
+    if (!order || !items) {
+      return NextResponse.json({ error: "Missing order payload" }, { status: 400 })
+    }
+
     const orderNumber = `JJ-${Date.now().toString(36).toUpperCase()}`
 
-    // Create order
     const { data: newOrder, error: orderError } = await supabase
       .from("orders")
-      .insert({ ...order, order_number: orderNumber })
-      .select()
+      .insert({
+        ...order,
+        order_number: orderNumber,
+        updated_at: new Date().toISOString(),
+      })
+      .select(
+        "id, order_number, customer_name, customer_email, status, total_price, tracking_number, carrier, created_at, updated_at",
+      )
       .single()
 
     if (orderError) throw orderError
 
-    // Create order items and decrease stock
     for (const item of items) {
-      // Insert order item
       await supabase.from("order_items").insert({
         order_id: newOrder.id,
         product_id: item.product_id,
@@ -52,41 +80,32 @@ export async function POST(request: NextRequest) {
         unit_price: item.unit_price,
         total_price: item.quantity * item.unit_price,
       })
-
-      // Decrease product stock
-      await supabase.rpc("decrease_product_stock", {
-        p_product_id: item.product_id,
-        p_quantity: item.quantity,
-      })
     }
 
-    return NextResponse.json(newOrder)
-  } catch (error) {
-    console.error("Error creating order:", error)
-    return NextResponse.json({ error: "Failed to create order" }, { status: 500 })
+    return NextResponse.json({ order: newOrder })
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 }
 
-// PATCH - Update order status
-export async function PATCH(request: NextRequest) {
+export async function PATCH(request: Request) {
   try {
-    const supabase = await getSupabaseServerClient()
+    const supabase = await requireAdminSession()
     const body = await request.json()
 
     const { id, ...updates } = body
-
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("orders")
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", id)
-      .select()
-      .single()
 
     if (error) throw error
 
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error("Error updating order:", error)
-    return NextResponse.json({ error: "Failed to update order" }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 }

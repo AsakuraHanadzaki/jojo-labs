@@ -1,15 +1,6 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/supabase/server"
-import {
-  hashSecret,
-  isRateLimited,
-  registerLoginAttempt,
-  safeEqual,
-  signValue,
-  encodeSessionPayload,
-  verifySessionPayload,
-} from "@/lib/admin/auth"
+import { hashSecret, isRateLimited, registerLoginAttempt, safeEqual, signValue, encodeSessionPayload } from "@/lib/admin/auth"
 
 export async function POST(request: Request) {
   try {
@@ -25,26 +16,16 @@ export async function POST(request: Request) {
     }
 
     const loginSecret = process.env.ADMIN_LOGIN_SECRET
-    if (!loginSecret) {
-      return NextResponse.json({ error: "Server login secret is not configured" }, { status: 500 })
+    const configuredAdminCode = process.env.ADMIN_ACCESS_CODE
+
+    if (!loginSecret || !configuredAdminCode) {
+      return NextResponse.json({ error: "Server admin login is not configured" }, { status: 500 })
     }
 
-    const secretHash = hashSecret(adminCode, loginSecret)
+    const submittedHash = hashSecret(adminCode, loginSecret)
+    const expectedHash = hashSecret(configuredAdminCode, loginSecret)
 
-    const supabase = await getSupabaseServerClient()
-    const { data, error } = await supabase
-      .from("admin_settings")
-      .select("setting_value")
-      .eq("setting_key", "admin_code")
-      .single()
-
-    if (error || !data) {
-      registerLoginAttempt(clientIp)
-      return NextResponse.json({ error: "Authentication failed" }, { status: 401 })
-    }
-
-    const storedHash = hashSecret(data.setting_value, loginSecret)
-    if (!safeEqual(secretHash, storedHash)) {
+    if (!safeEqual(submittedHash, expectedHash)) {
       registerLoginAttempt(clientIp)
       return NextResponse.json({ error: "Invalid admin code" }, { status: 401 })
     }
